@@ -1,0 +1,2760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busy_Bored_Happy_Sync_1 - Refined Personal Productivity Engine</title>
+    <!-- Supabase JS v2 CDN Browser Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* ==========================================================================
+           1. CSS RESET & VARIABLES (MODERN + HISTORICAL THEMES)
+           ========================================================================== */
+        :root {
+            --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-family-serif: "Georgia", "Times New Roman", serif;
+            
+            /* Modern Theme Defaults */
+            --bg-canvas: #f4f5f7;
+            --bg-column: #ebecf0;
+            --bg-card: #ffffff;
+            --bg-header: #172b4d;
+            --text-main: #172b4d;
+            --text-subtle: #5e6c84;
+            --border-color: #dfe1e6;
+            --accent-primary: #0052cc;
+            --accent-hover: #0065ff;
+            --accent-light: #deebff;
+            --shadow-card: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --radius-card: 4px;
+            --radius-column: 8px;
+            --header-border-bottom: 1px solid var(--border-color);
+            
+            /* Priority Colours */
+            --p1-bg: #ffebe6; --p1-color: #de350b; --p1-border: #ffbdad;
+            --p2-bg: #fff0b3; --p2-color: #172b4d; --p2-border: #ffe380;
+            --p3-bg: #e3fcef; --p3-color: #006644; --p3-border: #abf5d1;
+        }
+
+        /* HISTORICAL ART THEMES REFINEMENTS */
+        [data-theme="art-nouveau"] {
+            --font-family-serif: "Playfair Display", "Baskerville", "Georgia", serif;
+            --bg-canvas: #fdfbf7;
+            --bg-column: #f4eee1;
+            --bg-card: #ffffff;
+            --bg-header: #2d3e35; /* Muted Botanical Forest */
+            --text-main: #2b2521;
+            --text-subtle: #63574e;
+            --border-color: #d8cbb9;
+            --accent-primary: #a65b4c; /* Dusty Rose / Soft Terracotta Accent */
+            --accent-hover: #be6b5a;
+            --accent-light: #eedfd9;
+            --shadow-card: 0 2px 6px rgba(45,62,53,0.08);
+            --radius-card: 6px 16px 6px 16px;
+            --radius-column: 8px 20px 8px 20px;
+            --header-border-bottom: 2px solid #a65b4c;
+        }
+
+        [data-theme="arts-crafts"] {
+            --font-family-serif: "Garamond", "Georgia", serif;
+            --bg-canvas: #192a23; /* Deep Indigo Green */
+            --bg-column: #22382f;
+            --bg-card: #fbf9f4; /* Readable Cream Cards */
+            --bg-header: #121e19;
+            --text-main: #192a23;
+            --text-subtle: #4c5d54;
+            --border-color: #3b5447;
+            --accent-primary: #c87a4b; /* Warm Madder / Ochre */
+            --accent-hover: #db8a59;
+            --accent-light: #2d473c;
+            --shadow-card: 0 3px 8px rgba(0,0,0,0.3);
+            --radius-card: 2px;
+            --radius-column: 4px;
+            --header-border-bottom: 3px double #c87a4b;
+        }
+
+        [data-theme="botanical-archive"] {
+            --font-family-serif: "Courier New", "Georgia", serif;
+            --bg-canvas: #e8e2d0; /* Aged Ivory Specimen Sheet */
+            --bg-column: #dcd4be;
+            --bg-card: #f7f4ea;
+            --bg-header: #232a21;
+            --text-main: #1c221a;
+            --text-subtle: #51584c;
+            --border-color: #b0a48b;
+            --accent-primary: #41593f; /* Moss Olive */
+            --accent-hover: #506d4e;
+            --accent-light: #cec3a9;
+            --shadow-card: 0 1px 3px rgba(0,0,0,0.12);
+            --radius-card: 0px;
+            --radius-column: 2px;
+            --header-border-bottom: 1px solid #1c221a;
+        }
+
+        [data-theme="vienna-secession"] {
+            --font-family-serif: "Bodoni MT", "Didot", serif;
+            --bg-canvas: #121212;
+            --bg-column: #1c1c1c;
+            --bg-card: #faf8f0; /* Off-white / Ivory */
+            --bg-header: #000000;
+            --text-main: #121212;
+            --text-subtle: #484848;
+            --border-color: #c5a059; /* Gold accent */
+            --accent-primary: #c5a059;
+            --accent-hover: #d8b26a;
+            --accent-light: #282828;
+            --shadow-card: 3px 3px 0px #c5a059;
+            --radius-card: 0px;
+            --radius-column: 0px;
+            --header-border-bottom: 2px solid #c5a059;
+        }
+
+        /* ADDITIONAL MODERN THEMES */
+        [data-theme="dark-slate"] {
+            --bg-canvas: #1e2022; --bg-column: #2d3034; --bg-card: #373b40;
+            --bg-header: #141618; --text-main: #f0f2f5; --text-subtle: #a0a6b0;
+            --border-color: #484d54; --accent-primary: #4f8cff; --accent-hover: #6ea0ff;
+            --accent-light: #2d3a52; --shadow-card: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        [data-theme="cyberpunk-dark"] {
+            --bg-canvas: #0d0e15; --bg-column: #1a1c28; --bg-card: #252839;
+            --bg-header: #05060a; --text-main: #00f0ff; --text-subtle: #ff007f;
+            --border-color: #ff007f; --accent-primary: #ffe600; --accent-hover: #fff066;
+            --accent-light: #3a1c38; --shadow-card: 0 0 8px rgba(255,0,127,0.4);
+        }
+        [data-theme="synthwave"] {
+            --bg-canvas: #1a0933; --bg-column: #2b1052; --bg-card: #3a186e;
+            --bg-header: #120424; --text-main: #ff71ce; --text-subtle: #01cdfe;
+            --border-color: #05ffa1; --accent-primary: #b967ff; --accent-hover: #d296ff;
+            --accent-light: #481f7a; --shadow-card: 0 3px 6px rgba(185,103,255,0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-family-base);
+            color: var(--text-main);
+            background-color: var(--bg-canvas);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Custom Background Render Layer */
+        #custom-bg-layer {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0; pointer-events: none; background-size: cover;
+            background-position: center; background-repeat: no-repeat;
+            transition: opacity 0.3s ease, filter 0.3s ease;
+        }
+
+        #custom-bg-dimmer {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 1; pointer-events: none; background-color: #000000;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+
+        #app-header, #app-toolbar, #kanban-board, .modal, #floating-pin-container { position: relative; z-index: 2; }
+
+        /* Background Motifs */
+        [data-theme="art-nouveau"] #kanban-board {
+            background-image: 
+                radial-gradient(ellipse at 15% 15%, rgba(166,91,76,0.06) 0%, transparent 40%),
+                radial-gradient(ellipse at 85% 85%, rgba(45,62,53,0.06) 0%, transparent 40%);
+        }
+        [data-theme="arts-crafts"] #kanban-board {
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(200,122,75,0.1) 2px, transparent 2px),
+                radial-gradient(circle at 0% 0%, rgba(251,249,244,0.05) 1px, transparent 1px);
+            background-size: 24px 24px, 12px 12px;
+        }
+        [data-theme="botanical-archive"] #kanban-board {
+            background-image: 
+                linear-gradient(rgba(176,164,139,0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(176,164,139,0.15) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        [data-theme="vienna-secession"] #kanban-board {
+            background-image: 
+                linear-gradient(45deg, #181818 25%, transparent 25%), 
+                linear-gradient(-45deg, #181818 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #181818 75%), 
+                linear-gradient(-45deg, transparent 75%, #181818 75%);
+            background-size: 30px 30px; background-position: 0 0, 0 15px, 15px -15px, -15px 0px;
+        }
+        body.has-custom-bg #kanban-board { background-image: none !important; }
+
+        /* ==========================================================================
+           2. HEADER, TOOLBAR & POMODORO
+           ========================================================================== */
+        #app-header {
+            background-color: var(--bg-header); color: #ffffff;
+            padding: 8px 16px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: var(--header-border-bottom); flex-wrap: wrap; gap: 8px;
+        }
+
+        .header-title {
+            font-family: var(--font-family-serif); font-size: 1.25rem; font-weight: bold;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .pomodoro-bar {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px;
+            font-size: 0.85rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.25);
+        }
+        .pomodoro-time { font-family: monospace; font-size: 0.95rem; width: 46px; text-align: center; }
+
+        .header-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+        #app-toolbar {
+            background-color: rgba(255,255,255,0.88); backdrop-filter: blur(5px);
+            padding: 6px 16px; display: flex; gap: 10px; align-items: center;
+            border-bottom: 1px solid var(--border-color); flex-wrap: wrap;
+        }
+
+        .search-box { position: relative; flex-grow: 1; max-width: 240px; }
+        .search-box input { width: 100%; padding: 5px 8px 5px 26px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.85rem; }
+        .search-box::before { content: "🔍"; position: absolute; left: 8px; top: 5px; font-size: 11px; opacity: 0.6; }
+
+        .filter-group { display: flex; gap: 4px; }
+
+        .btn {
+            background-color: #ffffff; border: 1px solid var(--border-color);
+            padding: 5px 10px; border-radius: 4px; cursor: pointer;
+            font-size: 0.82rem; font-weight: 500; color: var(--text-main);
+            transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 4px;
+        }
+        .btn:hover { background-color: #f4f5f7; border-color: #c1c7d0; }
+        .btn-primary { background-color: var(--accent-primary); color: #ffffff; border-color: transparent; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-active { background-color: var(--accent-light); border-color: var(--accent-primary); color: var(--accent-primary); }
+
+        /* ==========================================================================
+           3. BOARD & KANBAN COLUMNS
+           ========================================================================== */
+        #kanban-board {
+            flex-grow: 1; display: flex; padding: 16px; gap: 16px;
+            overflow-x: auto; align-items: flex-start;
+        }
+
+        .kanban-column {
+            background-color: var(--bg-column); border-radius: var(--radius-column);
+            width: 310px; min-width: 310px; max-height: 100%; display: flex;
+            flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .kanban-column.is-dragging { opacity: 0.4; transform: scale(0.98); }
+        .kanban-column.drag-over-list { border: 2px dashed var(--accent-primary); }
+
+        .column-header {
+            padding: 10px 12px; display: flex; align-items: center;
+            justify-content: space-between; user-select: none;
+            background-color: rgba(255,255,255,0.25);
+            border-top-left-radius: var(--radius-column); border-top-right-radius: var(--radius-column);
+        }
+
+        .column-drag-handle { cursor: grab; padding: 4px; margin-right: 4px; color: var(--text-subtle); font-size: 14px; }
+        .column-drag-handle:active { cursor: grabbing; }
+
+        .column-title { font-weight: 600; font-size: 0.92rem; flex-grow: 1; cursor: pointer; padding: 2px 4px; }
+        .column-title:hover { background-color: rgba(0,0,0,0.05); border-radius: 3px; }
+
+        .column-actions { display: flex; gap: 2px; }
+
+        .btn-icon {
+            background: none; border: none; cursor: pointer; padding: 4px 6px;
+            border-radius: 3px; color: var(--text-subtle); font-size: 0.85rem;
+        }
+        .btn-icon:hover { background-color: rgba(0,0,0,0.08); color: var(--text-main); }
+
+        .card-list {
+            padding: 8px; flex-grow: 1; overflow-y: auto; min-height: 50px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .card-list.drag-over-card { background-color: rgba(0,0,0,0.04); border-radius: 4px; }
+
+        .add-card-btn {
+            margin: 0 8px 8px 8px; padding: 8px; text-align: left;
+            background: transparent; border: none; color: var(--text-subtle);
+            border-radius: 4px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 5px;
+        }
+        .add-card-btn:hover { background-color: rgba(0,0,0,0.05); color: var(--text-main); }
+
+        /* ==========================================================================
+           4. KANBAN CARDS & COVER IMAGES
+           ========================================================================== */
+        .kanban-card {
+            background-color: var(--bg-card); border-radius: var(--radius-card);
+            padding: 10px; box-shadow: var(--shadow-card); cursor: grab;
+            position: relative; border: 1px solid var(--border-color);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .kanban-card:active { cursor: grabbing; }
+        .kanban-card.is-dragging-card { opacity: 0.3; }
+
+        .kanban-card.sticky-highlight { border-left: 4px solid #ffab00 !important; background-color: #fffdf5; }
+
+        .card-cover-img {
+            width: 100%; height: 100px; object-fit: cover; border-radius: 3px; margin-bottom: 2px;
+        }
+
+        .card-tags-priority { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+
+        .priority-badge { font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; }
+        .priority-p1 { background-color: var(--p1-bg); color: var(--p1-color); border: 1px solid var(--p1-border); }
+        .priority-p2 { background-color: var(--p2-bg); color: var(--p2-color); border: 1px solid var(--p2-border); }
+        .priority-p3 { background-color: var(--p3-bg); color: var(--p3-color); border: 1px solid var(--p3-border); }
+
+        .tag-pill { font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; background-color: #ebecf0; color: var(--text-subtle); font-weight: 600; }
+
+        .card-title { font-size: 0.88rem; font-weight: 500; word-break: break-word; }
+
+        .card-checklist-progress { display: flex; flex-direction: column; gap: 2px; }
+        .checklist-text { font-size: 0.72rem; color: var(--text-subtle); }
+        .checklist-bar-bg { background-color: #dfe1e6; height: 4px; border-radius: 2px; overflow: hidden; }
+        .checklist-bar-fill { background-color: #36b37e; height: 100%; width: 0%; transition: width 0.3s ease; }
+
+        .card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-subtle); }
+        .card-due-date { display: inline-flex; align-items: center; gap: 3px; padding: 2px 4px; border-radius: 3px; }
+        .card-due-date.overdue { background-color: #ffebe6; color: #de350b; font-weight: bold; }
+        .card-due-date.today { background-color: #fff0b3; color: #172b4d; font-weight: bold; }
+        .card-due-date.this-week { background-color: #e3fcef; color: #006644; }
+
+        /* ==========================================================================
+           5. FULL FLOATING PIN REFERENCE WINDOWS
+           ========================================================================== */
+        #floating-pin-container {
+            position: fixed; bottom: 20px; right: 20px;
+            display: flex; gap: 12px; align-items: flex-end;
+            z-index: 900; pointer-events: none; flex-wrap: wrap-reverse;
+            max-width: calc(100vw - 40px);
+        }
+
+        .floating-window {
+            pointer-events: auto; background: #ffffff; border: 2px solid var(--accent-primary);
+            border-radius: 6px; width: 340px; max-height: 65vh;
+            display: flex; flex-direction: column; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            overflow: hidden; background-color: var(--bg-card);
+        }
+
+        .floating-window-header {
+            background-color: var(--accent-light); padding: 8px 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color); cursor: move; user-select: none;
+        }
+
+        .floating-window-title { font-weight: bold; font-size: 0.88rem; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .floating-window-controls { display: flex; gap: 4px; }
+
+        .floating-window-body {
+            padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem;
+        }
+
+        .floating-window-body.collapsed { display: none; }
+
+        /* ==========================================================================
+           6. MODALS & CHECKLISTS
+           ========================================================================== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.5); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .modal {
+            background-color: #ffffff; border-radius: 8px; width: 100%;
+            max-width: 580px; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column;
+        }
+
+        .modal-header { padding: 14px 18px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-family: var(--font-family-serif); font-size: 1.15rem; }
+
+        .modal-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+        .modal-footer { padding: 10px 18px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; background-color: #f4f5f7; }
+
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-subtle); }
+        .form-control { padding: 7px 10px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.88rem; font-family: inherit; }
+        textarea.form-control { min-height: 70px; resize: vertical; }
+
+        .checklist-editor { border: 1px solid var(--border-color); border-radius: 4px; padding: 10px; background: #fafbfc; }
+        .checklist-item-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .checklist-item-row input[type="text"] { flex-grow: 1; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 3px; font-size: 0.85rem; }
+
+        .alert { padding: 8px 12px; border-radius: 4px; font-size: 0.82rem; margin-bottom: 8px; }
+        .alert-error { background-color: #ffebe6; color: #de350b; border: 1px solid #ffbdad; }
+        .alert-info { background-color: #deebff; color: #0052cc; border: 1px solid #b3d4ff; }
+        .alert-warning { background-color: #fff0b3; color: #172b4d; border: 1px solid #ffe380; }
+        .alert-success { background-color: #e3fcef; color: #006644; border: 1px solid #abf5d1; }
+
+        #status-bar {
+            background-color: #172b4d; color: #ffffff; font-size: 0.72rem;
+            padding: 4px 16px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .status-badge { display: inline-flex; align-items: center; gap: 5px; }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background-color: #36b37e; }
+    </style>
+</head>
+<body data-theme="modern">
+
+    <!-- Custom Background Layer -->
+    <div id="custom-bg-layer"></div>
+    <div id="custom-bg-dimmer"></div>
+
+    <!-- Application Top Header -->
+    <header id="app-header">
+        <div class="header-title">
+            <span>📋 Busy Bored Happy Secure</span>
+        </div>
+
+        <!-- Pomodoro Timer -->
+        <div class="pomodoro-bar">
+            <span>⏱️</span>
+            <span class="pomodoro-time" id="pomo-display">25:00</span>
+            <button class="btn btn-icon" id="pomo-toggle-btn" onclick="Pomodoro.toggle()" style="color: #fff;">▶</button>
+            <button class="btn btn-icon" onclick="Pomodoro.reset()" style="color: #fff;" title="Reset Timer">↺</button>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="Board.openGlobalNewCardModal()">+ New Card</button>
+            <button class="btn" onclick="UI.openModal('copilot-modal')">🤖 AI Copilot</button>
+            <button class="btn" onclick="UI.openModal('email-modal')">📧 Paste Email</button>
+            <button class="btn" onclick="UI.openModal('settings-modal')">⚙️ Settings & Sync</button>
+            <button class="btn" onclick="UI.openModal('help-modal')">❓ Help</button>
+            <button class="btn" onclick="Board.addNewListPrompt()">+ Add List</button>
+        </div>
+    </header>
+
+    <!-- Floating Pinned Cards Windows Container -->
+    <div id="floating-pin-container"></div>
+
+    <!-- App Toolbar -->
+    <div id="app-toolbar">
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Search cards..." oninput="Board.applyFilters()">
+        </div>
+        <div class="filter-group">
+            <button class="btn btn-active" id="filter-all" onclick="Board.setFilter('all')">All</button>
+            <button class="btn" id="filter-today" onclick="Board.setFilter('today')">Today</button>
+            <button class="btn" id="filter-week" onclick="Board.setFilter('week')">Due This Week</button>
+            <button class="btn" id="filter-overdue" onclick="Board.setFilter('overdue')">Overdue</button>
+        </div>
+        <div style="margin-left: auto;" id="undo-container"></div>
+    </div>
+
+    <!-- Main Kanban Drag and Drop Area -->
+    <main id="kanban-board"></main>
+
+    <!-- Status Bar -->
+    <div id="status-bar">
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            <span id="storage-status">IndexedDB Ready</span>
+        </div>
+        <div>Busy Bored Happy Secure Architecture</div>
+    </div>
+
+    <!-- LIST NAME ADD/RENAME MODAL -->
+    <div class="modal-overlay" id="list-name-modal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 id="list-name-modal-title">Add List</h3>
+                <button class="btn-icon" onclick="UI.closeModal('list-name-modal')">✖</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>List Title</label>
+                    <input type="text" id="list-name-input" class="form-control" placeholder="Enter list title..." onkeydown="if(event.key==='Enter') Board.saveListName()">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="UI.closeModal('list-name-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="Board.saveListName()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD EDIT/CREATE MODAL -->
+    <div class="modal-overlay" id="card-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="card-modal-title">Edit Card</h3>
+                <button class="btn-icon" onclick="UI.closeModal('card-modal')">✖</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="card-edit-id">
+                
+                <div class="form-group" id="global-list-select-group" style="display: none;">
+                    <label>Target Column List</label>
+                    <select id="card-edit-list-id" class="form-control"></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="card-edit-title" class="form-control" placeholder="Card title...">
+                </div>
+
+                <div class="form-group">
+                    <label>Card Image</label>
+                    <input type="file" id="card-edit-image-file" class="form-control" accept="image/jpeg,image/png,image/webp" onchange="Board.handleCardImageSelection(event)">
+                    <div id="card-edit-image-preview-container" style="margin-top: 6px; display: none;">
+                        <img id="card-edit-image-preview" src="" alt="Preview" style="max-width: 100%; max-height: 120px; border-radius: 4px; object-fit: cover; display: block; margin-bottom: 6px;">
+                        <button class="btn" type="button" style="color: #de350b; font-size: 0.78rem;" onclick="Board.removeCardImage()">Remove Image</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description / Notes</label>
+                    <textarea id="card-edit-desc" class="form-control" placeholder="Add detailed notes..."></textarea>
+                </div>
+
+                <div class="form-row" style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Priority</label>
+                        <select id="card-edit-priority" class="form-control">
+                            <option value="none">None</option>
+                            <option value="p1">P1 - High Priority</option>
+                            <option value="p2">P2 - Medium Priority</option>
+                            <option value="p3">P3 - Low Priority</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Due Date</label>
+                        <input type="date" id="card-edit-due" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Tags (comma separated)</label>
+                    <input type="text" id="card-edit-tags" class="form-control" placeholder="urgent, work, home">
+                </div>
+
+                <!-- Checklist Subtasks Section -->
+                <div class="form-group">
+                    <label>Checklist Subtasks</label>
+                    <div class="checklist-editor">
+                        <div id="checklist-items-container"></div>
+                        <div style="display: flex; gap: 6px; margin-top: 6px;">
+                            <input type="text" id="new-checklist-input" class="form-control" placeholder="New subtask item...">
+                            <button class="btn" onclick="Board.addChecklistItemFromInput()">+ Add</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row" style="display: flex; gap: 20px;">
+                    <label><input type="checkbox" id="card-edit-sticky"> 📌 Sticky Highlight (Top of List)</label>
+                </div>
+
+                <!-- One-Way Apple Integrations Handoff & Floating Window Pin -->
+                <div class="form-group" style="margin-top: 5px;">
+                    <label>Actions, Floating Pin & Handoffs</label>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="FloatingPin.pinCurrentModalCard()">📌 Pin Window</button>
+                        <button class="btn" onclick="Handoff.sendToBear()">🐻 Send to Bear</button>
+                        <button class="btn" onclick="Handoff.sendToFantastical()">📅 Send to Fantastical</button>
+                        <button class="btn" onclick="Handoff.sendToReminders()">⏰ Add to Reminders</button>
+                        <button class="btn" onclick="AICopilot.breakdownCard()">🤖 AI Breakdown</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="color: #de350b; margin-right: auto;" onclick="Board.deleteCurrentCard()">Delete Card</button>
+                <button class="btn" onclick="UI.closeModal('card-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="Board.saveCardModal()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI COPILOT MODAL -->
+    <div class="modal-overlay" id="copilot-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🤖 AI Copilot</h3>
+                <button class="btn-icon" onclick="UI.closeModal('copilot-modal')">✖</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    ℹ️ Secure AI Ready: Connect the Busy Bored secure backend to enable AI. No API keys are stored in this app.
+                </div>
+
+                <div class="form-group">
+                    <label>Copilot Tasks</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn" onclick="AICopilot.runStandup()">📝 Daily Standup Summary</button>
+                        <button class="btn" onclick="AICopilot.runBottleneck()">🔍 Bottleneck Analysis</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Copilot Output</label>
+                    <textarea id="copilot-output" class="form-control" style="min-height: 120px;" readonly placeholder="AI insights will appear here..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="UI.closeModal('copilot-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASTE EMAIL AS CARD MODAL -->
+    <div class="modal-overlay" id="email-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Paste Email as Task</h3>
+                <button class="btn-icon" onclick="UI.closeModal('email-modal')">✖</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Target List</label>
+                    <select id="email-target-list" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label>Email Subject / Title</label>
+                    <input type="text" id="email-subject" class="form-control" placeholder="Subject line...">
+                </div>
+                <div class="form-group">
+                    <label>Email Content Body</label>
+                    <textarea id="email-body" class="form-control" style="min-height: 120px;" placeholder="Paste raw email text here..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="UI.closeModal('email-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="Board.convertEmailToCard()">Create Card</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS, BACKGROUND & BACKUP/SYNC MODAL -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Settings, Art Themes & Backup</h3>
+                <button class="btn-icon" onclick="UI.closeModal('settings-modal')">✖</button>
+            </div>
+            <div class="modal-body">
+                <div id="settings-error-container"></div>
+
+                <div class="form-group">
+                    <label>Visual Direction Theme</label>
+                    <select id="theme-select" class="form-control" onchange="Settings.changeTheme(this.value)">
+                        <optgroup label="Historical Art Themes">
+                            <option value="modern">Modern Default</option>
+                            <option value="art-nouveau">Art Nouveau (Curved Ornament & Ivory)</option>
+                            <option value="arts-crafts">Arts & Crafts (Botanical Grid & Ochre)</option>
+                            <option value="botanical-archive">Botanical Archive (Specimen Label & Grid)</option>
+                            <option value="vienna-secession">Vienna Secession (Geometric Gold & Black)</option>
+                        </optgroup>
+                        <optgroup label="Modern Themes">
+                            <option value="dark-slate">Dark Slate</option>
+                            <option value="cyberpunk-dark">Cyberpunk Dark</option>
+                            <option value="synthwave">Synthwave</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 6px 0;">
+
+                <h4>Custom Background Image</h4>
+                <div class="form-group">
+                    <label>Upload Photo (JPEG, PNG, WebP &lt; 50MB)</label>
+                    <input type="file" id="bg-file-input" class="form-control" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onchange="Settings.handleBgUpload(event)">
+                </div>
+
+                <div class="form-row" style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Fit</label>
+                        <select id="bg-fit-select" class="form-control" onchange="Settings.updateBgConfig('fit', this.value)">
+                            <option value="cover">Cover</option>
+                            <option value="contain">Contain</option>
+                            <option value="repeat">Repeat</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Position</label>
+                        <select id="bg-position-select" class="form-control" onchange="Settings.updateBgConfig('position', this.value)">
+                            <option value="center">Center</option>
+                            <option value="top">Top</option>
+                            <option value="bottom">Bottom</option>
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Dimming / Overlay Opacity: <span id="opacity-val">40%</span></label>
+                    <input type="range" id="bg-opacity-range" min="0" max="0.9" step="0.05" class="form-control" oninput="Settings.updateBgConfig('overlayOpacity', parseFloat(this.value))">
+                </div>
+
+                <div class="form-group">
+                    <label>Blur Amount: <span id="blur-val">0px</span></label>
+                    <input type="range" id="bg-blur-range" min="0" max="10" step="1" class="form-control" oninput="Settings.updateBgConfig('blurAmount', parseInt(this.value))">
+                </div>
+
+                <button class="btn" style="color: #de350b;" onclick="Settings.removeCustomBackground()">Remove Custom Background</button>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 6px 0;">
+
+                <h4>Cloud Sync (Supabase Manual Backup)</h4>
+                <div class="alert alert-info">
+                    ℹ️ Status: <span id="cloud-sync-status">Checking...</span>
+                </div>
+                <div id="cloud-sync-ui-container"></div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 6px 0;">
+
+                <h4>Local History Snapshots</h4>
+                <div id="snapshot-history-list" style="font-size: 0.82rem; max-height: 80px; overflow-y: auto; background: #fafbfc; border: 1px solid var(--border-color); padding: 6px; border-radius: 4px;"></div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 6px 0;">
+
+                <h4>Secret GitHub Gist Backup (Unlisted, Manual Backup)</h4>
+                <div class="alert alert-info">
+                    ℹ️ Secret Gist is an unlisted manual backup and pull mechanism, not realtime cross-device sync. Image binaries remain stored locally in IndexedDB.
+                </div>
+                <div class="form-group">
+                    <label>GitHub Personal Access Token (Session Only - Never Stored)</label>
+                    <input type="password" id="gist-token" class="form-control" placeholder="Paste personal token for current session..." onchange="GistSync.saveToken(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Gist ID (Auto-generated on first backup)</label>
+                    <input type="text" id="gist-id" class="form-control" placeholder="Gist ID..." onchange="GistSync.saveGistId(this.value)">
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn" onclick="GistSync.backupNow()">📤 Backup Now</button>
+                    <button class="btn" onclick="GistSync.pullLatest()">📥 Pull Latest</button>
+                    <span id="gist-status" style="font-size: 0.8rem; color: var(--text-subtle);"></span>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 6px 0;">
+
+                <h4>Export & Workspace Reset</h4>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn" onclick="Storage.exportJSON()">Export JSON</button>
+                    <button class="btn" onclick="document.getElementById('import-file-input').click()">Import JSON</button>
+                    <input type="file" id="import-file-input" style="display: none;" accept=".json" onchange="Storage.importJSON(event)">
+                    <button class="btn" style="color: #de350b;" onclick="Storage.resetWorkspace()">Reset Workspace</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="UI.closeModal('settings-modal')">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HELP & DOCUMENTATION MODAL -->
+    <div class="modal-overlay" id="help-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>❓ Busy Bored Help & Documentation</h3>
+                <button class="btn-icon" onclick="UI.closeModal('help-modal')">✖</button>
+            </div>
+            <div class="modal-body" style="font-size: 0.88rem; line-height: 1.4;">
+                <h4 style="color: var(--accent-primary);">QUICK START</h4>
+                <p>• <strong>New Cards & Shortcuts:</strong> Click "+ New Card" in header or press <code>N</code> / <code>C</code> on keyboard.</p>
+                <p>• <strong>List Drag Handle:</strong> Reorder columns using the grip handle (⋮⋮) in list headers.</p>
+                <p>• <strong>Floating Pins:</strong> Click "📌 Pin Window" in any card to spawn an independent, fully interactive reference window.</p>
+
+                <h4 style="color: var(--accent-primary);">APPLE INTEGRATIONS</h4>
+                <p>• <strong>Bear:</strong> One-way export via <code>bear://x-callback-url/create</code>.</p>
+                <p>• <strong>Fantastical:</strong> Natural-language parsing via <code>x-fantastical3://parse?sentence=...</code>.</p>
+                <p>• <strong>Reminders:</strong> Sends the current card to the "Busy Bored to Reminders" Apple Shortcut.</p>
+
+                <h4 style="color: var(--accent-primary); margin-top: 8px;">DATABASE / BACKUPS</h4>
+                <p>• <strong>IndexedDB:</strong> Durable local structured storage for cards, lists, settings, and image blobs.</p>
+
+                <h4 style="color: var(--accent-primary); margin-top: 8px;">AI COPILOT</h4>
+                <p>• <strong>Secure Architecture:</strong> Proxies requests via server-side endpoint. Client app state stores no API keys.</p>
+
+                <h4 style="color: var(--accent-primary); margin-top: 8px;">INSTALL APP</h4>
+                <p>• <strong>iOS / macOS:</strong> Add to Home Screen or Dock via browser menu.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="UI.closeModal('help-modal')">Got It</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+       7. JAVASCRIPT ENGINE & DATA ACCESS LAYER
+       ========================================================================== -->
+    <script>
+        /* --------------------------------------------------------------------------
+           A. SAFE TEXT & UTILITY HELPERS
+           -------------------------------------------------------------------------- */
+        function createTextElem(tag, text, className) {
+            const el = document.createElement(tag);
+            if (className) el.className = className;
+            el.textContent = text || '';
+            return el;
+        }
+
+        function formatLocalDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getTodayLocalDateString() { return formatLocalDate(new Date()); }
+
+        function getSevenDaysLocalLocalDateString() {
+            const d = new Date();
+            d.setDate(d.getDate() + 7);
+            return formatLocalDate(d);
+        }
+
+        function sanitizeStateForExport(state) {
+            const source = state || AppState;
+            const copy = JSON.parse(JSON.stringify(source));
+
+            delete copy.snapshots;
+
+            return {
+                theme: copy.theme || 'modern',
+                gistId: copy.gistId || '',
+                background: {
+                    assetId: copy.background?.assetId ?? null,
+                    fit: copy.background?.fit || 'cover',
+                    position: copy.background?.position || 'center',
+                    overlayOpacity: copy.background?.overlayOpacity ?? 0.4,
+                    blurAmount: copy.background?.blurAmount ?? 0
+                },
+                lists: copy.lists || [],
+                cards: copy.cards || {}
+            };
+        }
+
+        function sanitizeSnapshots(snapshots) {
+            if (!snapshots || !Array.isArray(snapshots)) return [];
+            return snapshots.map(snap => ({
+                id: snap.id,
+                timestamp: snap.timestamp,
+                label: snap.label,
+                state: sanitizeStateForExport(snap.state)
+            }));
+        }
+
+        function attachLocalCardImages(incomingCards, localCards) {
+            const result = JSON.parse(JSON.stringify(incomingCards || {}));
+
+            Object.keys(result).forEach(cardId => {
+                delete result[cardId].coverAssetId;
+
+                const localAssetId = localCards?.[cardId]?.coverAssetId;
+                if (localAssetId) {
+                    result[cardId].coverAssetId = localAssetId;
+                }
+            });
+
+            return result;
+        }
+
+        /* --------------------------------------------------------------------------
+           B. INDEXEDDB DATA ACCESS LAYER (STRUCTURED + MEDIA STORAGE)
+           -------------------------------------------------------------------------- */
+        const MediaStorage = {
+            dbName: 'BusyBoredDB', dbVersion: 3, db: null,
+
+            async init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.dbVersion);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('assets')) {
+                            db.createObjectStore('assets', { keyPath: 'id' });
+                        }
+                        if (!db.objectStoreNames.contains('attachments')) {
+                            db.createObjectStore('attachments', { keyPath: 'id' });
+                        }
+                        if (!db.objectStoreNames.contains('app_state')) {
+                            db.createObjectStore('app_state', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.db = e.target.result;
+                        if (!this.db.objectStoreNames.contains('assets') || !this.db.objectStoreNames.contains('app_state')) {
+                            this.db.close();
+                            const req2 = indexedDB.open(this.dbName, this.dbVersion + 1);
+                            req2.onupgradeneeded = (ev) => {
+                                const db2 = ev.target.result;
+                                if (!db2.objectStoreNames.contains('assets')) db2.createObjectStore('assets', { keyPath: 'id' });
+                                if (!db2.objectStoreNames.contains('attachments')) db2.createObjectStore('attachments', { keyPath: 'id' });
+                                if (!db2.objectStoreNames.contains('app_state')) db2.createObjectStore('app_state', { keyPath: 'id' });
+                            };
+                            req2.onsuccess = (ev) => {
+                                this.db = ev.target.result;
+                                document.getElementById('storage-status').textContent = 'IndexedDB Ready';
+                                resolve(this.db);
+                            };
+                            req2.onerror = (ev) => reject(ev.target.error);
+                            return;
+                        }
+                        document.getElementById('storage-status').textContent = 'IndexedDB Ready';
+                        resolve(this.db);
+                    };
+                    request.onerror = (e) => {
+                        console.error('IndexedDB init failed:', e.target.error);
+                        document.getElementById('storage-status').textContent = 'Storage Fallback';
+                        reject(e.target.error);
+                    };
+                });
+            },
+
+            async saveAsset(id, blob) {
+                if (!this.db) await this.init();
+                return new Promise((resolve, reject) => {
+                    try {
+                        const tx = this.db.transaction('assets', 'readwrite');
+                        tx.objectStore('assets').put({ id, blob, updated: Date.now() });
+                        tx.oncomplete = () => resolve(id);
+                        tx.onerror = () => reject({ code: 'INDEXEDDB_ERROR', message: tx.error?.message || 'Transaction error saving asset' });
+                    } catch (err) {
+                        reject({ code: 'INDEXEDDB_ERROR', message: err.message });
+                    }
+                });
+            },
+
+            async getAsset(id) {
+                if (!this.db) await this.init();
+                return new Promise((resolve, reject) => {
+                    try {
+                        const tx = this.db.transaction('assets', 'readonly');
+                        const req = tx.objectStore('assets').get(id);
+                        req.onsuccess = () => resolve(req.result ? req.result.blob : null);
+                        req.onerror = () => reject(req.error);
+                    } catch (err) {
+                        resolve(null);
+                    }
+                });
+            },
+
+            async deleteAsset(id) {
+                if (!id || !this.db) return;
+                return new Promise((resolve, reject) => {
+                    try {
+                        const tx = this.db.transaction('assets', 'readwrite');
+                        tx.objectStore('assets').delete(id);
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject(tx.error);
+                    } catch (err) {
+                        resolve();
+                    }
+                });
+            },
+
+            async saveAppState(stateObj) {
+                if (!this.db) await this.init();
+                return new Promise((resolve, reject) => {
+                    try {
+                        const cleanState = sanitizeStateForExport(stateObj);
+                        cleanState.snapshots = sanitizeSnapshots(stateObj.snapshots);
+                        const tx = this.db.transaction('app_state', 'readwrite');
+                        tx.objectStore('app_state').put({ id: 'main_state', data: cleanState });
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject(tx.error);
+                    } catch (err) {
+                        resolve();
+                    }
+                });
+            },
+
+            async loadAppState() {
+                if (!this.db) await this.init();
+                return new Promise((resolve, reject) => {
+                    try {
+                        const tx = this.db.transaction('app_state', 'readonly');
+                        const req = tx.objectStore('app_state').get('main_state');
+                        req.onsuccess = () => resolve(req.result ? req.result.data : null);
+                        req.onerror = () => reject(req.error);
+                    } catch (err) {
+                        resolve(null);
+                    }
+                });
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           C. STATE MODEL & SNAPSHOTS
+           -------------------------------------------------------------------------- */
+        const DefaultData = {
+            theme: 'modern',
+            gistId: '',
+            background: { assetId: null, fit: 'cover', position: 'center', overlayOpacity: 0.4, blurAmount: 0 },
+            snapshots: [],
+            lists: [
+                { id: 'list-1', title: 'To Do', cardIds: ['card-1', 'card-2'] },
+                { id: 'list-2', title: 'In Progress', cardIds: ['card-3'] },
+                { id: 'list-3', title: 'Done', cardIds: [] }
+            ],
+            cards: {
+                'card-1': {
+                    id: 'card-1',
+                    title: 'Welcome to Busy Bored Happy Secure',
+                    coverUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&q=80',
+                    coverAssetId: null,
+                    description: 'Restored Pomodoro timer, AI copilot, Apple integrations, priority badges, and multi-floating windows.',
+                    dueDate: getTodayLocalDateString(),
+                    priority: 'p1',
+                    tags: ['welcome', 'secure'],
+                    sticky: true,
+                    checklist: [
+                        { id: 'chk-1', text: 'Test list drag grip', completed: true },
+                        { id: 'chk-2', text: 'Verify floating windows', completed: false }
+                    ]
+                },
+                'card-2': {
+                    id: 'card-2',
+                    title: 'Test Local Calendar Filtering',
+                    coverUrl: '',
+                    coverAssetId: null,
+                    description: 'Verify today, overdue, and due this week filters in Australia/Perth local calendar.',
+                    dueDate: getSevenDaysLocalLocalDateString(),
+                    priority: 'p2',
+                    tags: ['testing'],
+                    sticky: false,
+                    checklist: []
+                },
+                'card-3': {
+                    id: 'card-3',
+                    title: 'Drag Architecture Test',
+                    coverUrl: '',
+                    coverAssetId: null,
+                    description: 'Try dragging this card vs grabbing list drag handles.',
+                    dueDate: '',
+                    priority: 'none',
+                    tags: ['drag'],
+                    sticky: false,
+                    checklist: []
+                }
+            }
+        };
+
+        let AppState = { ...DefaultData };
+        let activeObjectUrl = null;
+        let lastDeletedState = null;
+        let tempChecklist = [];
+        let pinnedCardIds = [];
+        let activeListEditId = null;
+
+        // Temporary Runtime State for Card Cover Image Editing
+        let pendingCardImageBlob = null;
+        let pendingCardImagePreviewUrl = null;
+        let isCardImageRemoved = false;
+
+        const Storage = {
+            async save() {
+                const portable = sanitizeStateForExport(AppState);
+                portable.snapshots = sanitizeSnapshots(AppState.snapshots);
+                localStorage.setItem('busy_bored_state', JSON.stringify(portable));
+                try { await MediaStorage.saveAppState(portable); } catch(e) {}
+            },
+
+            async load() {
+                let loaded = null;
+                try { loaded = await MediaStorage.loadAppState(); } catch(e) {}
+                if (!loaded) {
+                    const raw = localStorage.getItem('busy_bored_state');
+                    if (raw) {
+                        try { loaded = JSON.parse(raw); } catch(e) {}
+                    }
+                }
+                if (loaded) {
+                    AppState = { ...DefaultData, ...loaded };
+                    delete AppState.copilotKey;
+                    delete AppState.gistToken;
+
+                    AppState.snapshots = sanitizeSnapshots(loaded.snapshots);
+
+                    AppState.background = {
+                        assetId: AppState.background?.assetId ?? null,
+                        fit: AppState.background?.fit || 'cover',
+                        position: AppState.background?.position || 'center',
+                        overlayOpacity: AppState.background?.overlayOpacity ?? 0.4,
+                        blurAmount: AppState.background?.blurAmount ?? 0
+                    };
+                    await this.save();
+                }
+            },
+
+            createSnapshot(label) {
+                const portableSnap = sanitizeStateForExport(AppState);
+                const snap = {
+                    id: 'snap-' + Date.now(),
+                    timestamp: new Date().toLocaleTimeString(),
+                    label: label || 'Auto Snapshot',
+                    state: portableSnap
+                };
+                AppState.snapshots.unshift(snap);
+                if (AppState.snapshots.length > 5) AppState.snapshots.pop();
+                this.save();
+                this.renderSnapshotsList();
+            },
+
+            restoreSnapshot(snapId) {
+                const snap = AppState.snapshots.find(s => s.id === snapId);
+                if (snap && confirm(`Restore snapshot from ${snap.timestamp}?`)) {
+                    const snaps = AppState.snapshots;
+                    AppState = JSON.parse(JSON.stringify(snap.state));
+                    delete AppState.copilotKey;
+                    delete AppState.gistToken;
+                    AppState.snapshots = sanitizeSnapshots(snaps);
+                    this.save();
+                    location.reload();
+                }
+            },
+
+            renderSnapshotsList() {
+                const elem = document.getElementById('snapshot-history-list');
+                if (!elem) return;
+                elem.replaceChildren();
+                if (!AppState.snapshots || AppState.snapshots.length === 0) {
+                    elem.appendChild(createTextElem('span', 'No snapshots recorded yet.', 'text-subtle'));
+                    return;
+                }
+                AppState.snapshots.forEach(s => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;';
+                    
+                    const labelSpan = document.createElement('span');
+                    const timeStrong = createTextElem('strong', s.timestamp);
+                    labelSpan.appendChild(timeStrong);
+                    labelSpan.appendChild(document.createTextNode(` - ${s.label}`));
+                    
+                    const btn = createTextElem('button', 'Restore', 'btn');
+                    btn.style.cssText = 'padding:2px 6px; font-size:0.75rem;';
+                    btn.onclick = () => Storage.restoreSnapshot(s.id);
+                    
+                    row.appendChild(labelSpan); row.appendChild(btn);
+                    elem.appendChild(row);
+                });
+            },
+
+            exportJSON() {
+                const exportData = sanitizeStateForExport(AppState);
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+                const dl = document.createElement('a');
+                dl.setAttribute("href", dataStr);
+                dl.setAttribute("download", `busy_bored_happy_secure_backup_${getTodayLocalDateString()}.json`);
+                document.body.appendChild(dl); dl.click(); dl.remove();
+            },
+
+            importJSON(e) {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (imported && imported.lists && imported.cards) {
+                            Storage.createSnapshot('Pre-Import Backup');
+                            const localCards = AppState.cards || {};
+                            AppState = { ...DefaultData, ...imported };
+                            delete AppState.copilotKey;
+                            delete AppState.gistToken;
+                            AppState.cards = attachLocalCardImages(imported.cards, localCards);
+                            AppState.snapshots = sanitizeSnapshots(imported.snapshots);
+                            Storage.save(); location.reload();
+                        } else alert('Invalid JSON structure.');
+                    } catch (err) { alert('Could not parse JSON file.'); }
+                };
+                reader.readAsText(file);
+            },
+
+            resetWorkspace() {
+                if (confirm('Are you sure you want to reset all cards and settings to default?')) {
+                    localStorage.removeItem('busy_bored_state'); location.reload();
+                }
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           D. BOARD UI & DRAG-AND-DROP CONTROLLER
+           -------------------------------------------------------------------------- */
+        let draggedCardId = null;
+        let draggedListId = null;
+        let activeFilter = 'all';
+
+        const Board = {
+            render() {
+                const boardContainer = document.getElementById('kanban-board');
+                boardContainer.innerHTML = '';
+
+                const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
+                const todayStr = getTodayLocalDateString();
+                const weekStr = getSevenDaysLocalLocalDateString();
+
+                FloatingPin.renderWindows();
+
+                AppState.lists.forEach(list => {
+                    const col = document.createElement('div');
+                    col.className = 'kanban-column';
+                    col.dataset.listId = list.id;
+
+                    const header = document.createElement('div');
+                    header.className = 'column-header';
+
+                    const dragHandle = createTextElem('span', '⋮⋮', 'column-drag-handle');
+                    dragHandle.title = 'Drag to reorder list';
+                    dragHandle.draggable = true;
+
+                    dragHandle.addEventListener('dragstart', (e) => this.handleListDragStart(e, list.id));
+                    dragHandle.addEventListener('dragend', (e) => this.handleListDragEnd(e));
+
+                    const title = createTextElem('span', list.title, 'column-title');
+                    title.onclick = () => this.renameListPrompt(list.id);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'column-actions';
+                    
+                    const delBtn = createTextElem('button', '🗑️', 'btn-icon');
+                    delBtn.onclick = (e) => { e.stopPropagation(); this.deleteList(list.id); };
+
+                    actions.appendChild(delBtn);
+                    header.appendChild(dragHandle); header.appendChild(title); header.appendChild(actions);
+
+                    const cardListElem = document.createElement('div');
+                    cardListElem.className = 'card-list';
+                    cardListElem.dataset.listId = list.id;
+
+                    col.addEventListener('dragover', (e) => this.handleDragOver(e));
+                    col.addEventListener('dragenter', (e) => this.handleDragEnter(e, col));
+                    col.addEventListener('dragleave', (e) => this.handleDragLeave(e, col));
+                    col.addEventListener('drop', (e) => this.handleDrop(e, list.id));
+
+                    const cardsInList = list.cardIds.map(id => AppState.cards[id]).filter(Boolean);
+
+                    cardsInList.sort((a, b) => (b.sticky ? 1 : 0) - (a.sticky ? 1 : 0));
+
+                    cardsInList.forEach(card => {
+                        if (searchVal && !card.title.toLowerCase().includes(searchVal) && !card.description.toLowerCase().includes(searchVal)) return;
+
+                        if (activeFilter === 'today' && card.dueDate !== todayStr) return;
+                        if (activeFilter === 'overdue' && (!card.dueDate || card.dueDate >= todayStr)) return;
+                        if (activeFilter === 'week' && (!card.dueDate || card.dueDate < todayStr || card.dueDate > weekStr)) return;
+
+                        const cardElem = this.createCardElement(card);
+                        cardListElem.appendChild(cardElem);
+                    });
+
+                    const addBtn = createTextElem('button', '+ Add a card', 'add-card-btn');
+                    addBtn.onclick = () => this.openNewCardModal(list.id);
+
+                    col.appendChild(header); col.appendChild(cardListElem); col.appendChild(addBtn);
+                    boardContainer.appendChild(col);
+                });
+
+                this.renderUndoButton();
+            },
+
+            createCardElement(card) {
+                const cardElem = document.createElement('div');
+                cardElem.className = `kanban-card ${card.sticky ? 'sticky-highlight' : ''}`;
+                cardElem.draggable = true;
+                cardElem.dataset.cardId = card.id;
+
+                cardElem.addEventListener('dragstart', (e) => this.handleCardDragStart(e, card.id));
+                cardElem.addEventListener('dragend', (e) => this.handleCardDragEnd(e));
+                cardElem.onclick = () => this.openEditCardModal(card.id);
+
+                if (card.coverAssetId) {
+                    const img = document.createElement('img');
+                    img.className = 'card-cover-img';
+                    cardElem.appendChild(img);
+
+                    MediaStorage.getAsset(card.coverAssetId).then(blob => {
+                        if (blob && blob.size > 0) {
+                            const objUrl = URL.createObjectURL(blob);
+                            img.src = objUrl;
+                            img.onload = () => URL.revokeObjectURL(objUrl);
+                            img.onerror = () => { URL.revokeObjectURL(objUrl); img.style.display = 'none'; };
+                        } else {
+                            img.style.display = 'none';
+                        }
+                    }).catch(() => { img.style.display = 'none'; });
+                } else if (card.coverUrl) {
+                    const img = document.createElement('img');
+                    img.src = card.coverUrl;
+                    img.className = 'card-cover-img';
+                    img.onerror = () => { img.style.display = 'none'; };
+                    cardElem.appendChild(img);
+                }
+
+                const tagPriorityRow = document.createElement('div');
+                tagPriorityRow.className = 'card-tags-priority';
+
+                if (card.priority && card.priority !== 'none') {
+                    const pMap = { p1: 'P1 High', p2: 'P2 Med', p3: 'P3 Low' };
+                    const pBadge = createTextElem('span', pMap[card.priority], `priority-badge priority-${card.priority}`);
+                    tagPriorityRow.appendChild(pBadge);
+                }
+
+                if (card.tags && card.tags.length > 0) {
+                    card.tags.forEach(t => tagPriorityRow.appendChild(createTextElem('span', t, 'tag-pill')));
+                }
+                cardElem.appendChild(tagPriorityRow);
+
+                cardElem.appendChild(createTextElem('div', card.title, 'card-title'));
+
+                if (card.checklist && card.checklist.length > 0) {
+                    const completed = card.checklist.filter(c => c.completed).length;
+                    const total = card.checklist.length;
+                    const pct = Math.round((completed / total) * 100);
+
+                    const progressWrap = document.createElement('div');
+                    progressWrap.className = 'card-checklist-progress';
+                    progressWrap.appendChild(createTextElem('div', `☑ ${completed}/${total} (${pct}%)`, 'checklist-text'));
+
+                    const barBg = document.createElement('div'); barBg.className = 'checklist-bar-bg';
+                    const barFill = document.createElement('div'); barFill.className = 'checklist-bar-fill';
+                    barFill.style.width = `${pct}%`;
+                    barBg.appendChild(barFill); progressWrap.appendChild(barBg);
+                    cardElem.appendChild(progressWrap);
+                }
+
+                const metaRow = document.createElement('div');
+                metaRow.className = 'card-meta';
+
+                const todayStr = getTodayLocalDateString();
+                const weekStr = getSevenDaysLocalLocalDateString();
+                if (card.dueDate) {
+                    let dateClass = '';
+                    if (card.dueDate < todayStr) dateClass = 'overdue';
+                    else if (card.dueDate === todayStr) dateClass = 'today';
+                    else if (card.dueDate <= weekStr) dateClass = 'this-week';
+
+                    const dateBadge = createTextElem('span', `📅 ${card.dueDate}`, `card-due-date ${dateClass}`);
+                    metaRow.appendChild(dateBadge);
+                } else {
+                    metaRow.appendChild(document.createElement('span'));
+                }
+
+                if (card.sticky) metaRow.appendChild(createTextElem('span', '📌', ''));
+                cardElem.appendChild(metaRow);
+
+                return cardElem;
+            },
+
+            handleListDragStart(e, listId) {
+                e.stopPropagation();
+                draggedListId = listId; draggedCardId = null;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/type', 'list');
+                e.dataTransfer.setData('text/id', listId);
+                const colElem = e.target.closest('.kanban-column');
+                if (colElem) colElem.classList.add('is-dragging');
+            },
+
+            handleListDragEnd(e) {
+                draggedListId = null;
+                document.querySelectorAll('.kanban-column').forEach(el => el.classList.remove('is-dragging', 'drag-over-list'));
+            },
+
+            handleCardDragStart(e, cardId) {
+                e.stopPropagation();
+                draggedCardId = cardId; draggedListId = null;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/type', 'card');
+                e.dataTransfer.setData('text/id', cardId);
+                e.target.classList.add('is-dragging-card');
+            },
+
+            handleCardDragEnd(e) {
+                draggedCardId = null;
+                e.target.classList.remove('is-dragging-card');
+                document.querySelectorAll('.card-list').forEach(el => el.classList.remove('drag-over-card'));
+            },
+
+            handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; },
+
+            handleDragEnter(e, colElem) {
+                e.preventDefault();
+                if (draggedListId) colElem.classList.add('drag-over-list');
+                else if (draggedCardId) {
+                    const cardList = colElem.querySelector('.card-list');
+                    if (cardList) cardList.classList.add('drag-over-card');
+                }
+            },
+
+            handleDragLeave(e, colElem) {
+                colElem.classList.remove('drag-over-list');
+                const cardList = colElem.querySelector('.card-list');
+                if (cardList) cardList.classList.remove('drag-over-card');
+            },
+
+            handleDrop(e, targetListId) {
+                e.preventDefault(); e.stopPropagation();
+                const dragType = e.dataTransfer.getData('text/type');
+
+                if (dragType === 'list' || draggedListId) {
+                    const sourceListId = draggedListId || e.dataTransfer.getData('text/id');
+                    if (sourceListId && sourceListId !== targetListId) {
+                        const fromIndex = AppState.lists.findIndex(l => l.id === sourceListId);
+                        const toIndex = AppState.lists.findIndex(l => l.id === targetListId);
+                        if (fromIndex !== -1 && toIndex !== -1) {
+                            const [movedList] = AppState.lists.splice(fromIndex, 1);
+                            AppState.lists.splice(toIndex, 0, movedList);
+                            Storage.save();
+                        }
+                    }
+                } else if (dragType === 'card' || draggedCardId) {
+                    const cardId = draggedCardId || e.dataTransfer.getData('text/id');
+                    if (cardId) {
+                        AppState.lists.forEach(l => l.cardIds = l.cardIds.filter(id => id !== cardId));
+                        const targetList = AppState.lists.find(l => l.id === targetListId);
+                        if (targetList) { targetList.cardIds.push(cardId); Storage.save(); }
+                    }
+                }
+
+                draggedListId = null; draggedCardId = null; this.render();
+            },
+
+            addNewListPrompt() {
+                activeListEditId = null;
+                document.getElementById('list-name-modal-title').textContent = 'Add List';
+                const input = document.getElementById('list-name-input');
+                input.value = '';
+                UI.openModal('list-name-modal');
+                setTimeout(() => input.focus(), 50);
+            },
+
+            renameListPrompt(listId) {
+                const list = AppState.lists.find(l => l.id === listId); if (!list) return;
+                activeListEditId = listId;
+                document.getElementById('list-name-modal-title').textContent = 'Rename List';
+                const input = document.getElementById('list-name-input');
+                input.value = list.title;
+                UI.openModal('list-name-modal');
+                setTimeout(() => {
+                    input.focus();
+                    input.select();
+                }, 50);
+            },
+
+            async saveListName() {
+                const input = document.getElementById('list-name-input');
+                const val = input.value.trim();
+                if (!val) return;
+
+                if (activeListEditId === null) {
+                    AppState.lists.push({
+                        id: 'list-' + Date.now(),
+                        title: val,
+                        cardIds: []
+                    });
+                } else {
+                    const list = AppState.lists.find(l => l.id === activeListEditId);
+                    if (list) {
+                        list.title = val;
+                    }
+                }
+
+                await Storage.save();
+                this.render();
+                UI.closeModal('list-name-modal');
+                activeListEditId = null;
+            },
+
+            deleteList(listId) {
+                if (AppState.lists.length <= 1) { alert('You must keep at least one list on the board.'); return; }
+                const list = AppState.lists.find(l => l.id === listId);
+                if (confirm(`Delete list "${list.title}" and its cards?`)) {
+                    Storage.createSnapshot(`Before Deleting List ${list.title}`);
+                    lastDeletedState = sanitizeStateForExport(AppState);
+                    list.cardIds.forEach(cId => {
+                        delete AppState.cards[cId];
+                        FloatingPin.unpin(cId);
+                    });
+                    AppState.lists = AppState.lists.filter(l => l.id !== listId);
+                    Storage.save(); this.render();
+                }
+            },
+
+            openGlobalNewCardModal() {
+                if (!AppState.lists || AppState.lists.length === 0) {
+                    alert('Please create a list first.'); return;
+                }
+                const selectGroup = document.getElementById('global-list-select-group');
+                const listSelect = document.getElementById('card-edit-list-id');
+                selectGroup.style.display = 'block';
+                
+                listSelect.replaceChildren();
+                AppState.lists.forEach(l => {
+                    const option = document.createElement('option');
+                    option.value = l.id;
+                    option.textContent = l.title;
+                    listSelect.appendChild(option);
+                });
+
+                this.openNewCardModal(AppState.lists[0].id);
+            },
+
+            clearCardImageState() {
+                if (pendingCardImagePreviewUrl) {
+                    URL.revokeObjectURL(pendingCardImagePreviewUrl);
+                    pendingCardImagePreviewUrl = null;
+                }
+                pendingCardImageBlob = null;
+                isCardImageRemoved = false;
+                
+                const fileInput = document.getElementById('card-edit-image-file');
+                if (fileInput) fileInput.value = '';
+
+                const container = document.getElementById('card-edit-image-preview-container');
+                const previewImg = document.getElementById('card-edit-image-preview');
+                if (container) container.style.display = 'none';
+                if (previewImg) previewImg.src = '';
+            },
+
+            openNewCardModal(listId) {
+                this.clearCardImageState();
+                document.getElementById('card-modal-title').textContent = 'Create Card';
+                document.getElementById('card-edit-id').value = '';
+                document.getElementById('card-edit-list-id').value = listId;
+                document.getElementById('card-edit-title').value = '';
+                document.getElementById('card-edit-desc').value = '';
+                document.getElementById('card-edit-priority').value = 'none';
+                document.getElementById('card-edit-due').value = getTodayLocalDateString();
+                document.getElementById('card-edit-tags').value = '';
+                document.getElementById('card-edit-sticky').checked = false;
+                tempChecklist = [];
+                this.renderChecklistEditor();
+                UI.openModal('card-modal');
+            },
+
+            openEditCardModal(cardId) {
+                const card = AppState.cards[cardId]; if (!card) return;
+                this.clearCardImageState();
+                document.getElementById('global-list-select-group').style.display = 'none';
+                document.getElementById('card-modal-title').textContent = 'Edit Card';
+                document.getElementById('card-edit-id').value = card.id;
+                document.getElementById('card-edit-title').value = card.title;
+                document.getElementById('card-edit-desc').value = card.description || '';
+                document.getElementById('card-edit-priority').value = card.priority || 'none';
+                document.getElementById('card-edit-due').value = card.dueDate || '';
+                document.getElementById('card-edit-tags').value = (card.tags || []).join(', ');
+                document.getElementById('card-edit-sticky').checked = !!card.sticky;
+                tempChecklist = card.checklist ? JSON.parse(JSON.stringify(card.checklist)) : [];
+                this.renderChecklistEditor();
+
+                const container = document.getElementById('card-edit-image-preview-container');
+                const previewImg = document.getElementById('card-edit-image-preview');
+
+                if (card.coverAssetId) {
+                    MediaStorage.getAsset(card.coverAssetId).then(blob => {
+                        if (blob && blob.size > 0 && !pendingCardImageBlob && !isCardImageRemoved) {
+                            pendingCardImagePreviewUrl = URL.createObjectURL(blob);
+                            previewImg.src = pendingCardImagePreviewUrl;
+                            container.style.display = 'block';
+                        }
+                    }).catch(() => {});
+                } else if (card.coverUrl) {
+                    previewImg.src = card.coverUrl;
+                    container.style.display = 'block';
+                }
+
+                UI.openModal('card-modal');
+            },
+
+            async handleCardImageSelection(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const supportedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+                const ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
+                const supportedExts = ['jpg', 'jpeg', 'png', 'webp'];
+
+                if ((file.type && !supportedMimes.includes(file.type.toLowerCase())) && (!ext || !supportedExts.includes(ext))) {
+                    alert('Please select a valid JPEG, PNG, or WebP image.');
+                    e.target.value = '';
+                    return;
+                }
+
+                try {
+                    const processed = await Settings.processAndResizeImage(file);
+                    
+                    if (pendingCardImagePreviewUrl) {
+                        URL.revokeObjectURL(pendingCardImagePreviewUrl);
+                    }
+
+                    pendingCardImageBlob = processed.blob;
+                    pendingCardImagePreviewUrl = URL.createObjectURL(processed.blob);
+                    isCardImageRemoved = false;
+
+                    const previewImg = document.getElementById('card-edit-image-preview');
+                    const container = document.getElementById('card-edit-image-preview-container');
+                    previewImg.src = pendingCardImagePreviewUrl;
+                    container.style.display = 'block';
+                } catch (err) {
+                    console.error('Failed to process card image', err);
+                    alert('Could not process selected image.');
+                    e.target.value = '';
+                }
+            },
+
+            removeCardImage() {
+                if (pendingCardImagePreviewUrl) {
+                    URL.revokeObjectURL(pendingCardImagePreviewUrl);
+                    pendingCardImagePreviewUrl = null;
+                }
+                pendingCardImageBlob = null;
+                isCardImageRemoved = true;
+
+                const fileInput = document.getElementById('card-edit-image-file');
+                if (fileInput) fileInput.value = '';
+
+                const container = document.getElementById('card-edit-image-preview-container');
+                const previewImg = document.getElementById('card-edit-image-preview');
+                if (container) container.style.display = 'none';
+                if (previewImg) previewImg.src = '';
+            },
+
+            renderChecklistEditor() {
+                const container = document.getElementById('checklist-items-container');
+                container.innerHTML = '';
+                tempChecklist.forEach((item, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'checklist-item-row';
+
+                    const chk = document.createElement('input');
+                    chk.type = 'checkbox'; chk.checked = !!item.completed;
+                    chk.onchange = () => this.toggleCheckitem(idx);
+
+                    const txt = document.createElement('input');
+                    txt.type = 'text'; txt.value = item.text || '';
+                    txt.onchange = (e) => this.updateCheckitemText(idx, e.target.value);
+
+                    const del = createTextElem('button', '✖', 'btn-icon');
+                    del.style.color = '#de350b';
+                    del.onclick = () => this.deleteCheckitem(idx);
+
+                    row.appendChild(chk); row.appendChild(txt); row.appendChild(del);
+                    container.appendChild(row);
+                });
+            },
+
+            addChecklistItemFromInput() {
+                const input = document.getElementById('new-checklist-input');
+                const val = input.value.trim();
+                if (val) {
+                    tempChecklist.push({ id: 'chk-' + Date.now() + Math.random().toString(36).substr(2, 4), text: val, completed: false });
+                    input.value = '';
+                    this.renderChecklistEditor();
+                }
+            },
+
+            toggleCheckitem(idx) { tempChecklist[idx].completed = !tempChecklist[idx].completed; this.renderChecklistEditor(); },
+            updateCheckitemText(idx, text) { tempChecklist[idx].text = text; },
+            deleteCheckitem(idx) { tempChecklist.splice(idx, 1); this.renderChecklistEditor(); },
+
+            async saveCardModal() {
+                const cardId = document.getElementById('card-edit-id').value;
+                const listId = document.getElementById('card-edit-list-id').value;
+                const title = document.getElementById('card-edit-title').value.trim();
+                if (!title) { alert('Card title is required.'); return; }
+
+                const tagsStr = document.getElementById('card-edit-tags').value;
+                const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+                let targetCard = null;
+                let oldCoverAssetId = null;
+
+                if (cardId) {
+                    targetCard = AppState.cards[cardId];
+                    if (targetCard) {
+                        oldCoverAssetId = targetCard.coverAssetId || null;
+                        targetCard.title = title;
+                        targetCard.description = document.getElementById('card-edit-desc').value;
+                        targetCard.priority = document.getElementById('card-edit-priority').value;
+                        targetCard.dueDate = document.getElementById('card-edit-due').value;
+                        targetCard.tags = tags;
+                        targetCard.sticky = document.getElementById('card-edit-sticky').checked;
+                        targetCard.checklist = tempChecklist;
+                    }
+                } else {
+                    const newId = 'card-' + Date.now();
+                    targetCard = {
+                        id: newId,
+                        title,
+                        coverUrl: '',
+                        coverAssetId: null,
+                        description: document.getElementById('card-edit-desc').value,
+                        priority: document.getElementById('card-edit-priority').value,
+                        dueDate: document.getElementById('card-edit-due').value,
+                        tags,
+                        sticky: document.getElementById('card-edit-sticky').checked,
+                        checklist: tempChecklist
+                    };
+                    AppState.cards[newId] = targetCard;
+                    const targetList = AppState.lists.find(l => l.id === listId);
+                    if (targetList) targetList.cardIds.push(newId);
+                }
+
+                if (targetCard) {
+                    if (pendingCardImageBlob) {
+                        const newAssetId = `card-img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+                        try {
+                            await MediaStorage.saveAsset(newAssetId, pendingCardImageBlob);
+                            const verifiedBlob = await MediaStorage.getAsset(newAssetId);
+                            if (verifiedBlob && verifiedBlob.size > 0) {
+                                targetCard.coverAssetId = newAssetId;
+                                targetCard.coverUrl = '';
+                                if (oldCoverAssetId && oldCoverAssetId !== newAssetId) {
+                                    await MediaStorage.deleteAsset(oldCoverAssetId);
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Failed saving card image asset', err);
+                        }
+                    } else if (isCardImageRemoved) {
+                        targetCard.coverAssetId = null;
+                        targetCard.coverUrl = '';
+                        if (oldCoverAssetId) {
+                            await MediaStorage.deleteAsset(oldCoverAssetId);
+                        }
+                    }
+                }
+
+                this.clearCardImageState();
+                await Storage.save();
+                UI.closeModal('card-modal');
+                this.render();
+            },
+
+            deleteCurrentCard() {
+                const cardId = document.getElementById('card-edit-id').value; if (!cardId) return;
+                if (confirm('Delete this card?')) {
+                    Storage.createSnapshot('Before Card Deletion');
+                    lastDeletedState = sanitizeStateForExport(AppState);
+                    delete AppState.cards[cardId];
+                    FloatingPin.unpin(cardId);
+                    AppState.lists.forEach(l => l.cardIds = l.cardIds.filter(id => id !== cardId));
+                    this.clearCardImageState();
+                    Storage.save(); UI.closeModal('card-modal'); this.render();
+                }
+            },
+
+            restoreUndo() {
+                if (lastDeletedState) {
+                    AppState = { ...DefaultData, ...JSON.parse(JSON.stringify(lastDeletedState)) };
+                    lastDeletedState = null; Storage.save(); this.render();
+                }
+            },
+
+            renderUndoButton() {
+                const container = document.getElementById('undo-container');
+                container.innerHTML = '';
+                if (lastDeletedState) {
+                    const btn = createTextElem('button', '↩️ Undo Delete', 'btn');
+                    btn.style.color = '#0052cc';
+                    btn.onclick = () => Board.restoreUndo();
+                    container.appendChild(btn);
+                }
+            },
+
+            setFilter(filterType) {
+                activeFilter = filterType;
+                document.querySelectorAll('.filter-group .btn').forEach(b => b.classList.remove('btn-active'));
+                document.getElementById(`filter-${filterType}`).classList.add('btn-active');
+                this.render();
+            },
+
+            applyFilters() { this.render(); },
+
+            convertEmailToCard() {
+                const listId = document.getElementById('email-target-list').value;
+                const subject = document.getElementById('email-subject').value.trim();
+                const body = document.getElementById('email-body').value;
+                if (!subject) { alert('Subject is required.'); return; }
+
+                const newId = 'card-' + Date.now();
+                AppState.cards[newId] = {
+                    id: newId, title: subject, coverUrl: '', coverAssetId: null, description: body,
+                    dueDate: getTodayLocalDateString(), priority: 'none',
+                    tags: ['email'], sticky: false, checklist: []
+                };
+
+                const list = AppState.lists.find(l => l.id === listId);
+                if (list) list.cardIds.push(newId);
+                Storage.save(); UI.closeModal('email-modal'); this.render();
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           E. FLOATING PIN REFERENCE WINDOWS CONTROLLER
+           -------------------------------------------------------------------------- */
+        const FloatingPin = {
+            pinCurrentModalCard() {
+                const cardId = document.getElementById('card-edit-id').value;
+                if (!cardId) { alert('Save the card first to pin it.'); return; }
+                if (!pinnedCardIds.includes(cardId)) {
+                    pinnedCardIds.push(cardId);
+                }
+                this.renderWindows();
+            },
+
+            unpin(cardId) {
+                pinnedCardIds = pinnedCardIds.filter(id => id !== cardId);
+                this.renderWindows();
+            },
+
+            toggleCollapse(cardId) {
+                const win = document.getElementById(`floating-win-${cardId}`);
+                if (win) {
+                    const body = win.querySelector('.floating-window-body');
+                    body.classList.toggle('collapsed');
+                }
+            },
+
+            renderWindows() {
+                const container = document.getElementById('floating-pin-container');
+                container.innerHTML = '';
+
+                pinnedCardIds.forEach(cardId => {
+                    const card = AppState.cards[cardId];
+                    if (!card) return;
+
+                    const win = document.createElement('div');
+                    win.className = 'floating-window';
+                    win.id = `floating-win-${cardId}`;
+
+                    const header = document.createElement('div');
+                    header.className = 'floating-window-header';
+
+                    const title = createTextElem('span', card.title, 'floating-window-title');
+                    
+                    const controls = document.createElement('div');
+                    controls.className = 'floating-window-controls';
+
+                    const collapseBtn = createTextElem('button', '_', 'btn-icon');
+                    collapseBtn.onclick = () => this.toggleCollapse(cardId);
+
+                    const openBtn = createTextElem('button', '↗', 'btn-icon');
+                    openBtn.title = 'Open in editor';
+                    openBtn.onclick = () => Board.openEditCardModal(cardId);
+
+                    const closeBtn = createTextElem('button', '×', 'btn-icon');
+                    closeBtn.title = 'Unpin window';
+                    closeBtn.onclick = () => this.unpin(cardId);
+
+                    controls.appendChild(collapseBtn); controls.appendChild(openBtn); controls.appendChild(closeBtn);
+                    header.appendChild(title); header.appendChild(controls);
+
+                    const body = document.createElement('div');
+                    body.className = 'floating-window-body';
+
+                    if (card.coverAssetId) {
+                        const img = document.createElement('img');
+                        img.className = 'card-cover-img';
+                        body.appendChild(img);
+
+                        MediaStorage.getAsset(card.coverAssetId).then(blob => {
+                            if (blob && blob.size > 0) {
+                                const objUrl = URL.createObjectURL(blob);
+                                img.src = objUrl;
+                                img.onload = () => URL.revokeObjectURL(objUrl);
+                                img.onerror = () => { URL.revokeObjectURL(objUrl); img.style.display = 'none'; };
+                            } else {
+                                img.style.display = 'none';
+                            }
+                        }).catch(() => { img.style.display = 'none'; });
+                    } else if (card.coverUrl) {
+                        const img = document.createElement('img');
+                        img.src = card.coverUrl;
+                        img.className = 'card-cover-img';
+                        img.onerror = () => { img.style.display = 'none'; };
+                        body.appendChild(img);
+                    }
+
+                    if (card.priority && card.priority !== 'none') {
+                        const pMap = { p1: 'P1 High', p2: 'P2 Med', p3: 'P3 Low' };
+                        body.appendChild(createTextElem('span', pMap[card.priority], `priority-badge priority-${card.priority}`));
+                    }
+
+                    if (card.dueDate) body.appendChild(createTextElem('div', `📅 Due: ${card.dueDate}`, 'text-subtle'));
+                    if (card.description) body.appendChild(createTextElem('div', card.description, ''));
+
+                    if (card.checklist && card.checklist.length > 0) {
+                        const chkWrap = document.createElement('div');
+                        chkWrap.style.cssText = 'display:flex; flex-direction:column; gap:4px; margin-top:4px;';
+                        card.checklist.forEach(c => {
+                            const item = createTextElem('div', `${c.completed ? '☑' : '☐'} ${c.text}`, 'text-subtle');
+                            chkWrap.appendChild(item);
+                        });
+                        body.appendChild(chkWrap);
+                    }
+
+                    win.appendChild(header); win.appendChild(body);
+                    container.appendChild(win);
+                });
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           F. POMODORO TIMER
+           -------------------------------------------------------------------------- */
+        const Pomodoro = {
+            duration: 25 * 60, remaining: 25 * 60, timerId: null,
+
+            toggle() { if (this.timerId) this.pause(); else this.start(); },
+
+            start() {
+                if (this.timerId) return;
+                document.getElementById('pomo-toggle-btn').textContent = '⏸';
+                this.timerId = setInterval(() => {
+                    this.remaining--; this.updateDisplay();
+                    if (this.remaining <= 0) {
+                        this.pause(); alert('🔔 Pomodoro Sprint Completed! Take a short break.'); this.reset();
+                    }
+                }, 1000);
+            },
+
+            pause() {
+                clearInterval(this.timerId); this.timerId = null;
+                document.getElementById('pomo-toggle-btn').textContent = '▶';
+            },
+
+            reset() { this.pause(); this.remaining = this.duration; this.updateDisplay(); },
+
+            updateDisplay() {
+                const mins = Math.floor(this.remaining / 60);
+                const secs = this.remaining % 60;
+                document.getElementById('pomo-display').textContent = 
+                    `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           G. APPLE INTEGRATIONS HANDOFFS
+           -------------------------------------------------------------------------- */
+        const Handoff = {
+            sendToBear() {
+                const title = document.getElementById('card-edit-title').value.trim();
+                const desc = document.getElementById('card-edit-desc').value;
+                if (!title) { alert('Card title required.'); return; }
+
+                const url = `bear://x-callback-url/create?title=${encodeURIComponent(title)}&text=${encodeURIComponent(desc)}`;
+                window.location.href = url;
+            },
+
+            sendToFantastical() {
+                const title = document.getElementById('card-edit-title').value.trim();
+                const due = document.getElementById('card-edit-due').value;
+                if (!title) { alert('Card title required.'); return; }
+
+                const sentence = due ? `${title} on ${due}` : title;
+                const url = `x-fantastical3://parse?sentence=${encodeURIComponent(sentence)}`;
+                
+                alert("Opening Fantastical… If it does not open, make sure Fantastical is installed.");
+                window.location.href = url;
+            },
+
+            sendToReminders() {
+                const title = document.getElementById('card-edit-title').value.trim();
+                const description = document.getElementById('card-edit-desc').value;
+                const dueDate = document.getElementById('card-edit-due').value;
+                const busyPriority = document.getElementById('card-edit-priority').value;
+                const tagsRaw = document.getElementById('card-edit-tags').value;
+                if (!title) { alert('Card title required.'); return; }
+
+                const priorityMap = {
+                    p1: 'High',
+                    p2: 'Medium',
+                    p3: 'Low',
+                    none: 'None'
+                };
+
+                const priority = priorityMap[busyPriority] || 'None';
+                const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+                const payload = JSON.stringify({
+                    title: title,
+                    notes: description,
+                    dueDate: dueDate,
+                    priority: priority,
+                    tags: tags
+                });
+
+                const url = `shortcuts://run-shortcut?name=${encodeURIComponent('Busy Bored to Reminders')}&input=text&text=${encodeURIComponent(payload)}`;
+                window.location.href = url;
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           H. AI COPILOT SECURE CLIENT
+           -------------------------------------------------------------------------- */
+        const SECURE_AI_ENDPOINT = '';
+
+        const AICopilot = {
+            async runStandup() {
+                const output = document.getElementById('copilot-output');
+                output.value = 'Analyzing daily board status...';
+                await this.queryOpenAI(`Generate a daily standup summary based on these cards: ${JSON.stringify(AppState.cards)}`);
+            },
+
+            async runBottleneck() {
+                const output = document.getElementById('copilot-output');
+                output.value = 'Analyzing workflow bottlenecks...';
+                await this.queryOpenAI(`Identify potential task bottlenecks or overdue items across these lists and cards: ${JSON.stringify(sanitizeStateForExport(AppState))}`);
+            },
+
+            async breakdownCard() {
+                const title = document.getElementById('card-edit-title').value;
+                const desc = document.getElementById('card-edit-desc').value;
+                UI.openModal('copilot-modal');
+                const output = document.getElementById('copilot-output');
+                output.value = `Breaking down task "${title}" into subtasks...`;
+                await this.queryOpenAI(`Break down the task titled "${title}" with description "${desc}" into 3-5 short subtasks. Return a simple list.`);
+            },
+
+            async queryOpenAI(promptText) {
+                const output = document.getElementById('copilot-output');
+
+                if (!SECURE_AI_ENDPOINT) {
+                    output.value = "AI is ready but needs the secure Busy Bored backend to be connected.";
+                    return;
+                }
+
+                try {
+                    const res = await fetch(SECURE_AI_ENDPOINT, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: promptText })
+                    });
+                    if (!res.ok) { output.value = `Backend Error ${res.status}: ${res.statusText}`; return; }
+                    const data = await res.json();
+                    output.value = data.result || data.choices?.[0]?.message?.content || JSON.stringify(data);
+                } catch (e) {
+                    output.value = `Failed to connect to secure AI endpoint: ${e.message}`;
+                }
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           I. SECRET GITHUB GIST BACKUP
+           -------------------------------------------------------------------------- */
+        let sessionGistToken = '';
+
+        const GistSync = {
+            saveToken(token) { sessionGistToken = token; },
+            saveGistId(id) { AppState.gistId = id; Storage.save(); },
+
+            async backupNow() {
+                const status = document.getElementById('gist-status');
+                const token = sessionGistToken || document.getElementById('gist-token').value;
+                if (!token) { status.textContent = '❌ Token required.'; return; }
+
+                status.textContent = 'Uploading...';
+                const exportData = sanitizeStateForExport(AppState);
+
+                const payload = {
+                    description: "Busy Bored Happy Secure Unlisted Manual Backup",
+                    public: false,
+                    files: { "busy_bored_data.json": { content: JSON.stringify(exportData, null, 2) } }
+                };
+
+                try {
+                    let url = 'https://api.github.com/gists';
+                    let method = 'POST';
+                    if (AppState.gistId) { url += `/${AppState.gistId}`; method = 'PATCH'; }
+
+                    const res = await fetch(url, {
+                        method, headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res.ok) { status.textContent = `❌ Backup failed (${res.status})`; return; }
+                    const data = await res.json();
+                    AppState.gistId = data.id;
+                    document.getElementById('gist-id').value = data.id;
+                    Storage.save();
+                    status.textContent = '✅ Backup successful!';
+                } catch (e) { status.textContent = '❌ Network error.'; }
+            },
+
+            async pullLatest() {
+                const status = document.getElementById('gist-status');
+                const token = sessionGistToken || document.getElementById('gist-token').value;
+                const gistId = AppState.gistId || document.getElementById('gist-id').value;
+
+                if (!token || !gistId) { status.textContent = '❌ Token and Gist ID required.'; return; }
+
+                status.textContent = 'Pulling...';
+                try {
+                    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+                        headers: { 'Authorization': `token ${token}` }
+                    });
+                    if (!res.ok) { status.textContent = `❌ Pull failed (${res.status})`; return; }
+
+                    const data = await res.json();
+                    const jsonContent = data.files['busy_bored_data.json']?.content;
+
+                    if (jsonContent) {
+                        Storage.createSnapshot('Pre-Gist Pull Backup');
+                        const imported = JSON.parse(jsonContent);
+                        const localCards = AppState.cards || {};
+                        AppState = { ...DefaultData, ...imported };
+                        delete AppState.copilotKey;
+                        delete AppState.gistToken;
+                        AppState.cards = attachLocalCardImages(imported.cards, localCards);
+                        AppState.snapshots = sanitizeSnapshots(imported.snapshots);
+                        Storage.save();
+                        status.textContent = '✅ Pulled! Reloading...';
+                        setTimeout(() => location.reload(), 800);
+                    } else status.textContent = '❌ No backup found in Gist.';
+                } catch (e) { status.textContent = '❌ Pull failed.'; }
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           J. SUPABASE MANUAL CLOUD SYNC
+           -------------------------------------------------------------------------- */
+        const SUPABASE_URL = '';
+        const SUPABASE_PUBLISHABLE_KEY = '';
+
+        let supabaseClient = null;
+
+        function createCloudSyncState() {
+            const cardsCopy = JSON.parse(JSON.stringify(AppState.cards || {}));
+            Object.keys(cardsCopy).forEach(key => {
+                if (cardsCopy[key]) {
+                    delete cardsCopy[key].coverAssetId;
+                }
+            });
+
+            return {
+                theme: AppState.theme || 'modern',
+                lists: JSON.parse(JSON.stringify(AppState.lists || [])),
+                cards: cardsCopy
+            };
+        }
+
+        const CloudSync = {
+            async init() {
+                if (typeof window.supabase !== 'undefined' && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+                    supabaseClient.auth.onAuthStateChange(() => {
+                        this.updateUI();
+                    });
+                }
+                this.updateUI();
+            },
+
+            isConfigured() {
+                return !!(supabaseClient && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+            },
+
+            async updateUI() {
+                const container = document.getElementById('cloud-sync-ui-container');
+                const statusSpan = document.getElementById('cloud-sync-status');
+                if (!container || !statusSpan) return;
+
+                if (!this.isConfigured()) {
+                    statusSpan.textContent = 'Cloud sync not configured.';
+                    container.replaceChildren();
+                    const p = createTextElem('p', 'Cloud sync not configured.');
+                    p.className = 'text-subtle';
+                    container.appendChild(p);
+                    return;
+                }
+
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                container.replaceChildren();
+
+                if (!session) {
+                    statusSpan.textContent = 'Signed out';
+
+                    const emailGroup = document.createElement('div');
+                    emailGroup.className = 'form-group';
+                    const emailLabel = createTextElem('label', 'Email');
+                    const emailInput = document.createElement('input');
+                    emailInput.type = 'email';
+                    emailInput.id = 'cloud-auth-email';
+                    emailInput.className = 'form-control';
+                    emailGroup.appendChild(emailLabel);
+                    emailGroup.appendChild(emailInput);
+
+                    const passGroup = document.createElement('div');
+                    passGroup.className = 'form-group';
+                    const passLabel = createTextElem('label', 'Password');
+                    const passInput = document.createElement('input');
+                    passInput.type = 'password';
+                    passInput.id = 'cloud-auth-password';
+                    passInput.className = 'form-control';
+                    passGroup.appendChild(passLabel);
+                    passGroup.appendChild(passInput);
+
+                    const btnRow = document.createElement('div');
+                    btnRow.style.cssText = 'display:flex; gap:8px; margin-top:8px;';
+                    
+                    const signInBtn = createTextElem('button', 'Sign In', 'btn btn-primary');
+                    signInBtn.onclick = () => this.signIn();
+
+                    const signUpBtn = createTextElem('button', 'Create Account', 'btn');
+                    signUpBtn.onclick = () => this.signUp();
+
+                    btnRow.appendChild(signInBtn);
+                    btnRow.appendChild(signUpBtn);
+
+                    container.appendChild(emailGroup);
+                    container.appendChild(passGroup);
+                    container.appendChild(btnRow);
+                } else {
+                    const userEmail = session.user.email;
+                    statusSpan.textContent = `Signed in as ${userEmail}`;
+
+                    const info = createTextElem('div', `Signed in as: ${userEmail}`);
+                    info.style.cssText = 'font-weight:600; margin-bottom:8px;';
+
+                    const btnRow = document.createElement('div');
+                    btnRow.style.cssText = 'display:flex; gap:8px; flex-wrap:wrap;';
+
+                    const pushBtn = createTextElem('button', 'Push Local → Cloud', 'btn btn-primary');
+                    pushBtn.onclick = () => this.pushLocal();
+
+                    const pullBtn = createTextElem('button', 'Pull Cloud → This Device', 'btn');
+                    pullBtn.onclick = () => this.pullCloud();
+
+                    const signOutBtn = createTextElem('button', 'Sign Out', 'btn');
+                    signOutBtn.onclick = () => this.signOut();
+
+                    btnRow.appendChild(pushBtn);
+                    btnRow.appendChild(pullBtn);
+                    btnRow.appendChild(signOutBtn);
+
+                    container.appendChild(info);
+                    container.appendChild(btnRow);
+                }
+            },
+
+            async signIn() {
+                const statusSpan = document.getElementById('cloud-sync-status');
+                const email = document.getElementById('cloud-auth-email')?.value.trim();
+                const password = document.getElementById('cloud-auth-password')?.value;
+                if (!email || !password) {
+                    if (statusSpan) statusSpan.textContent = 'Email and password required.';
+                    return;
+                }
+                statusSpan.textContent = 'Signing in...';
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) {
+                    statusSpan.textContent = `Sign in failed: ${error.message}`;
+                } else {
+                    this.updateUI();
+                }
+            },
+
+            async signUp() {
+                const statusSpan = document.getElementById('cloud-sync-status');
+                const email = document.getElementById('cloud-auth-email')?.value.trim();
+                const password = document.getElementById('cloud-auth-password')?.value;
+                if (!email || !password) {
+                    if (statusSpan) statusSpan.textContent = 'Email and password required.';
+                    return;
+                }
+                statusSpan.textContent = 'Creating account...';
+                const { error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) {
+                    statusSpan.textContent = `Account creation failed: ${error.message}`;
+                } else {
+                    statusSpan.textContent = 'Account created! Please check your email or sign in.';
+                    this.updateUI();
+                }
+            },
+
+            async signOut() {
+                if (supabaseClient) await supabaseClient.auth.signOut();
+                this.updateUI();
+            },
+
+            async pushLocal() {
+                const statusSpan = document.getElementById('cloud-sync-status');
+                if (!this.isConfigured()) {
+                    if (statusSpan) statusSpan.textContent = 'Cloud sync not configured.';
+                    return;
+                }
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) {
+                    if (statusSpan) statusSpan.textContent = 'Signed out';
+                    return;
+                }
+
+                statusSpan.textContent = 'Uploading...';
+                const cloudState = createCloudSyncState();
+                const nowIso = new Date().toISOString();
+
+                const { error } = await supabaseClient
+                    .from('busy_bored_workspaces')
+                    .upsert({
+                        user_id: session.user.id,
+                        state: cloudState,
+                        updated_at: nowIso
+                    }, { onConflict: 'user_id' });
+
+                if (error) {
+                    statusSpan.textContent = `Cloud sync error: ${error.message}`;
+                    console.error('Cloud Push Error:', error);
+                } else {
+                    const timeStr = new Date(nowIso).toLocaleTimeString();
+                    statusSpan.textContent = `Cloud backup updated (${timeStr})`;
+                }
+            },
+
+            async pullCloud() {
+                const statusSpan = document.getElementById('cloud-sync-status');
+                if (!this.isConfigured()) {
+                    if (statusSpan) statusSpan.textContent = 'Cloud sync not configured.';
+                    return;
+                }
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) {
+                    if (statusSpan) statusSpan.textContent = 'Signed out';
+                    return;
+                }
+
+                statusSpan.textContent = 'Downloading...';
+
+                const { data, error } = await supabaseClient
+                    .from('busy_bored_workspaces')
+                    .select('state, updated_at')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle();
+
+                if (error) {
+                    statusSpan.textContent = `Cloud sync error: ${error.message}`;
+                    console.error('Cloud Pull Error:', error);
+                    return;
+                }
+
+                if (!data || !data.state) {
+                    statusSpan.textContent = 'No cloud workspace exists yet. Push this device first.';
+                    return;
+                }
+
+                const remoteState = data.state;
+                if (!remoteState.lists || !remoteState.cards) {
+                    statusSpan.textContent = 'Cloud sync error: Invalid remote state.';
+                    return;
+                }
+
+                Storage.createSnapshot('Before Cloud Pull');
+
+                const localCards = AppState.cards || {};
+                const localSnapshots = AppState.snapshots || [];
+                const localBackground = AppState.background;
+                const localGistId = AppState.gistId;
+
+                AppState = { ...DefaultData, ...remoteState };
+                delete AppState.copilotKey;
+                delete AppState.gistToken;
+
+                AppState.cards = attachLocalCardImages(remoteState.cards, localCards);
+                AppState.snapshots = sanitizeSnapshots(localSnapshots);
+                AppState.background = localBackground;
+                AppState.gistId = localGistId;
+
+                await Storage.save();
+
+                statusSpan.textContent = 'Cloud workspace loaded.';
+                setTimeout(() => location.reload(), 500);
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           K. SETTINGS & BACKGROUND MANAGER
+           -------------------------------------------------------------------------- */
+        const Settings = {
+            init() {
+                document.body.setAttribute('data-theme', AppState.theme);
+                document.getElementById('theme-select').value = AppState.theme;
+
+                document.getElementById('gist-id').value = AppState.gistId || '';
+
+                const config = AppState.background;
+                document.getElementById('bg-fit-select').value = config.fit || 'cover';
+                document.getElementById('bg-position-select').value = config.position || 'center';
+                
+                const opacity = config.overlayOpacity ?? 0.4;
+                document.getElementById('bg-opacity-range').value = opacity;
+                document.getElementById('opacity-val').textContent = `${Math.round(opacity * 100)}%`;
+
+                const blur = config.blurAmount ?? 0;
+                document.getElementById('bg-blur-range').value = blur;
+                document.getElementById('blur-val').textContent = `${blur}px`;
+
+                Storage.renderSnapshotsList();
+                this.applyBackgroundAsset();
+            },
+
+            changeTheme(themeName) {
+                AppState.theme = themeName;
+                document.body.setAttribute('data-theme', themeName);
+                Storage.save();
+            },
+
+            async updateBgConfig(key, value) {
+                AppState.background[key] = value;
+                Storage.save();
+
+                if (key === 'overlayOpacity') {
+                    document.getElementById('opacity-val').textContent = `${Math.round(value * 100)}%`;
+                } else if (key === 'blurAmount') {
+                    document.getElementById('blur-val').textContent = `${value}px`;
+                }
+
+                this.applyBackgroundStyles();
+            },
+
+            async applyBackgroundAsset() {
+                const assetId = AppState.background.assetId;
+                const bgLayer = document.getElementById('custom-bg-layer');
+
+                if (!assetId) {
+                    if (activeObjectUrl) {
+                        URL.revokeObjectURL(activeObjectUrl);
+                        activeObjectUrl = null;
+                    }
+                    bgLayer.style.backgroundImage = 'none';
+                    document.body.classList.remove('has-custom-bg');
+                    this.applyBackgroundStyles();
+                    return;
+                }
+
+                try {
+                    const blob = await MediaStorage.getAsset(assetId);
+                    if (blob && blob.size > 0) {
+                        if (activeObjectUrl) {
+                            URL.revokeObjectURL(activeObjectUrl);
+                        }
+                        activeObjectUrl = URL.createObjectURL(blob);
+                        bgLayer.style.backgroundImage = `url("${activeObjectUrl}")`;
+                        bgLayer.style.opacity = '1';
+                        bgLayer.style.display = 'block';
+                        document.body.classList.add('has-custom-bg');
+                    } else {
+                        bgLayer.style.backgroundImage = 'none';
+                        document.body.classList.remove('has-custom-bg');
+                    }
+                } catch (e) {
+                    console.error('Failed to load background blob', e);
+                    bgLayer.style.backgroundImage = 'none';
+                    document.body.classList.remove('has-custom-bg');
+                }
+
+                this.applyBackgroundStyles();
+            },
+
+            applyBackgroundStyles() {
+                const config = AppState.background;
+                const bgLayer = document.getElementById('custom-bg-layer');
+                const bgDimmer = document.getElementById('custom-bg-dimmer');
+
+                bgLayer.style.backgroundSize = config.fit || 'cover';
+                bgLayer.style.backgroundPosition = config.position || 'center';
+                bgLayer.style.backgroundRepeat = config.fit === 'repeat' ? 'repeat' : 'no-repeat';
+                bgLayer.style.filter = `blur(${config.blurAmount || 0}px)`;
+
+                const opacity = config.overlayOpacity ?? 0.4;
+                bgDimmer.style.opacity = opacity;
+            },
+
+            formatMB(bytes) {
+                return (bytes / (1024 * 1024)).toFixed(1);
+            },
+
+            showErrorMsg(message) {
+                const errorContainer = document.getElementById('settings-error-container');
+                errorContainer.replaceChildren();
+                const alertDiv = createTextElem('div', message, 'alert alert-error');
+                errorContainer.appendChild(alertDiv);
+            },
+
+            showStatusMsg(message) {
+                const errorContainer = document.getElementById('settings-error-container');
+                errorContainer.replaceChildren();
+                const alertDiv = createTextElem('div', message, 'alert alert-info');
+                alertDiv.id = 'bg-status-alert';
+                errorContainer.appendChild(alertDiv);
+            },
+
+            showSuccessMsg(origMB, origWidth, origHeight, storedMB, newWidth, newHeight) {
+                const errorContainer = document.getElementById('settings-error-container');
+                errorContainer.replaceChildren();
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success';
+
+                const strong = createTextElem('strong', 'Background image saved.');
+                alertDiv.appendChild(strong);
+                alertDiv.appendChild(document.createElement('br'));
+                alertDiv.appendChild(document.createTextNode(`Original: ${origMB} MB (${origWidth} × ${origHeight})`));
+                alertDiv.appendChild(document.createElement('br'));
+                alertDiv.appendChild(document.createTextNode(`Stored: ${storedMB} MB (${newWidth} × ${newHeight})`));
+
+                errorContainer.appendChild(alertDiv);
+            },
+
+            clearStatusMsg() {
+                const errorContainer = document.getElementById('settings-error-container');
+                errorContainer.replaceChildren();
+            },
+
+            async handleBgUpload(e) {
+                const file = e.target.files[0];
+                this.clearStatusMsg();
+                if (!file) return;
+
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+
+                if (file.size > 50 * 1024 * 1024) {
+                    console.error("FILE_TOO_LARGE: Source file size exceeded 50 MB limit", file.size);
+                    this.showErrorMsg(`That image is ${sizeMB} MB. Busy Bored accepts source images up to 50 MB.`);
+                    e.target.value = '';
+                    return;
+                }
+
+                const ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
+                const mime = file.type ? file.type.toLowerCase() : '';
+
+                if (ext === 'heic' || ext === 'heif' || mime.includes('heic') || mime.includes('heif')) {
+                    console.error("HEIC_UNSUPPORTED: HEIC/HEIF format selected", { ext, mime });
+                    this.showErrorMsg("This image is HEIC/HEIF. Busy Bored cannot decode this format in this browser yet. Export or convert it to JPEG, PNG or WebP and try again.");
+                    e.target.value = '';
+                    return;
+                }
+
+                const supportedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+                const supportedExts = ['jpg', 'jpeg', 'png', 'webp'];
+                if ((mime && !supportedMimes.includes(mime)) && (!ext || !supportedExts.includes(ext))) {
+                    console.error("UNSUPPORTED_FORMAT: Invalid format selected", { ext, mime });
+                    this.showErrorMsg("Unsupported file format. Please upload a JPEG, PNG, or WebP image.");
+                    e.target.value = '';
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    this.showStatusMsg(`Optimising ${sizeMB} MB image…`);
+                } else {
+                    this.showStatusMsg("Processing image…");
+                }
+
+                const previousAssetId = AppState.background.assetId;
+                let newAssetId = null;
+
+                try {
+                    const processed = await this.processAndResizeImage(file);
+                    
+                    newAssetId = 'bg-' + Date.now();
+                    await MediaStorage.saveAsset(newAssetId, processed.blob);
+
+                    const storedBlob = await MediaStorage.getAsset(newAssetId);
+                    if (!storedBlob || storedBlob.size === 0) {
+                        throw { code: 'VERIFY_ERROR', message: 'Failed to verify saved background image in IndexedDB.' };
+                    }
+
+                    AppState.background.assetId = newAssetId;
+                    await this.applyBackgroundAsset();
+                    Storage.save();
+
+                    if (previousAssetId && previousAssetId !== newAssetId) {
+                        await MediaStorage.deleteAsset(previousAssetId);
+                    }
+
+                    const origMB = this.formatMB(file.size);
+                    const storedMB = this.formatMB(storedBlob.size);
+                    this.showSuccessMsg(origMB, processed.origWidth, processed.origHeight, storedMB, processed.newWidth, processed.newHeight);
+
+                } catch (err) {
+                    console.error("Background Processing Failure:", err);
+
+                    AppState.background.assetId = previousAssetId;
+                    Storage.save();
+                    this.applyBackgroundAsset();
+
+                    if (newAssetId) {
+                        MediaStorage.deleteAsset(newAssetId).catch(() => {});
+                    }
+
+                    let userMsg = "Busy Bored couldn't process that image.";
+                    const errCode = err.code || err.name || 'UNKNOWN';
+
+                    if (errCode === 'DECODE_ERROR') {
+                        userMsg = "Could not decode the image file. The file may be corrupt or unsupported.";
+                    } else if (errCode === 'CANVAS_ERROR') {
+                        userMsg = "Canvas processing failed while resizing the image.";
+                    } else if (errCode === 'BLOB_ERROR') {
+                        userMsg = "Failed to convert processed image to data blob.";
+                    } else if (errCode === 'INDEXEDDB_ERROR') {
+                        userMsg = "Failed to store image in local database.";
+                    } else if (errCode === 'VERIFY_ERROR') {
+                        userMsg = "Verification failed: Stored background image was empty.";
+                    } else if (err.message) {
+                        userMsg = err.message;
+                    }
+
+                    this.showErrorMsg(userMsg);
+                } finally {
+                    e.target.value = '';
+                }
+            },
+
+            async processAndResizeImage(file) {
+                return new Promise((resolve, reject) => {
+                    let objectUrl = null;
+                    try {
+                        objectUrl = URL.createObjectURL(file);
+                    } catch (e) {
+                        reject({ code: 'DECODE_ERROR', message: 'Failed to create Object URL from file.' });
+                        return;
+                    }
+
+                    const img = new Image();
+
+                    img.onerror = () => {
+                        if (objectUrl) URL.revokeObjectURL(objectUrl);
+                        reject({ code: 'DECODE_ERROR', message: 'Failed to decode image using browser engine.' });
+                    };
+
+                    img.onload = () => {
+                        const origWidth = img.width;
+                        const origHeight = img.height;
+
+                        const needsResize = (file.size > 5 * 1024 * 1024) || (origWidth > 2560) || (origHeight > 2560);
+
+                        if (!needsResize) {
+                            if (objectUrl) URL.revokeObjectURL(objectUrl);
+                            resolve({
+                                blob: file,
+                                origWidth, origHeight,
+                                newWidth: origWidth, newHeight: origHeight
+                            });
+                            return;
+                        }
+
+                        let newWidth = origWidth;
+                        let newHeight = origHeight;
+                        const maxDim = 2560;
+
+                        if (newWidth > maxDim || newHeight > maxDim) {
+                            if (newWidth > newHeight) {
+                                newHeight = Math.round((newHeight * maxDim) / newWidth);
+                                newWidth = maxDim;
+                            } else {
+                                newWidth = Math.round((newWidth * maxDim) / newHeight);
+                                newWidth = maxDim;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = newWidth;
+                        canvas.height = newHeight;
+                        const ctx = canvas.getContext('2d');
+
+                        if (!ctx) {
+                            if (objectUrl) URL.revokeObjectURL(objectUrl);
+                            reject({ code: 'CANVAS_ERROR', message: 'Could not obtain 2D rendering context for canvas.' });
+                            return;
+                        }
+
+                        let mimeType = file.type || 'image/jpeg';
+                        if (mimeType !== 'image/png' && mimeType !== 'image/webp' && mimeType !== 'image/jpeg') {
+                            mimeType = 'image/jpeg';
+                        }
+
+                        if (mimeType === 'image/png') {
+                            ctx.clearRect(0, 0, newWidth, newHeight);
+                        }
+
+                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                        if (objectUrl) URL.revokeObjectURL(objectUrl);
+
+                        const quality = mimeType === 'image/png' ? undefined : 0.88;
+
+                        try {
+                            canvas.toBlob((blob) => {
+                                if (blob && blob.size > 0) {
+                                    resolve({
+                                        blob,
+                                        origWidth, origHeight,
+                                        newWidth, newHeight
+                                    });
+                                } else {
+                                    reject({ code: 'BLOB_ERROR', message: 'Failed to generate blob output from canvas.' });
+                                }
+                            }, mimeType, quality);
+                        } catch (blobErr) {
+                            reject({ code: 'BLOB_ERROR', message: blobErr.message || 'Canvas toBlob throwing error.' });
+                        }
+                    };
+
+                    img.src = objectUrl;
+                });
+            },
+
+            async removeCustomBackground() {
+                const oldAssetId = AppState.background.assetId;
+                if (oldAssetId) {
+                    AppState.background.assetId = null;
+                    Storage.save();
+                    await MediaStorage.deleteAsset(oldAssetId);
+                    this.applyBackgroundAsset();
+                    this.clearStatusMsg();
+                }
+            }
+        };
+
+        /* --------------------------------------------------------------------------
+           L. UI MODAL CONTROLLER & KEYBOARD SHORTCUTS
+           -------------------------------------------------------------------------- */
+        const UI = {
+            openModal(id) {
+                if (id === 'email-modal') {
+                    const select = document.getElementById('email-target-list');
+                    select.replaceChildren();
+                    AppState.lists.forEach(l => {
+                        const option = document.createElement('option');
+                        option.value = l.id;
+                        option.textContent = l.title;
+                        select.appendChild(option);
+                    });
+                }
+                document.getElementById(id).classList.add('active');
+            },
+            closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        };
+
+        // Keyboard Shortcuts (N / C for New Card)
+        window.addEventListener('keydown', (e) => {
+            const activeEl = document.activeElement;
+            const isTyping = activeEl && (
+                activeEl.tagName === 'INPUT' || 
+                activeEl.tagName === 'TEXTAREA' || 
+                activeEl.tagName === 'SELECT' || 
+                activeEl.isContentEditable
+            );
+
+            if (isTyping || e.cmdKey || e.ctrlKey || e.altKey || e.metaKey) return;
+
+            if (e.key === 'n' || e.key === 'N' || e.key === 'c' || e.key === 'C') {
+                e.preventDefault();
+                Board.openGlobalNewCardModal();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            try { await MediaStorage.init(); } catch (e) { console.warn('MediaStorage warning:', e); }
+            await Storage.load();
+            Settings.init();
+            Board.render();
+            Pomodoro.updateDisplay();
+            try { await CloudSync.init(); } catch (e) { console.warn('CloudSync init warning:', e); }
+        });
+    </script>
+</body>
+</html>
