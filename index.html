@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busy_Bored_Happy_Sync_1 - Refined Personal Productivity Engine</title>
+    <title>Busy Bored</title>
     <!-- Supabase JS v2 CDN Browser Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -412,7 +412,7 @@
     <!-- Application Top Header -->
     <header id="app-header">
         <div class="header-title">
-            <span>📋 Busy Bored Happy Secure</span>
+            <span>📋 Busy Bored</span>
         </div>
 
         <!-- Pomodoro Timer -->
@@ -459,7 +459,7 @@
             <span class="status-dot"></span>
             <span id="storage-status">IndexedDB Ready</span>
         </div>
-        <div>Busy Bored Happy Secure Architecture</div>
+        <div>Busy Bored</div>
     </div>
 
     <!-- LIST NAME ADD/RENAME MODAL -->
@@ -505,6 +505,7 @@
                 <div class="form-group">
                     <label>Card Image</label>
                     <input type="file" id="card-edit-image-file" class="form-control" accept="image/jpeg,image/png,image/webp" onchange="Board.handleCardImageSelection(event)">
+                    <div id="card-image-status" role="status" aria-live="polite" style="margin-top:6px;"></div>
                     <div id="card-edit-image-preview-container" style="margin-top: 6px; display: none;">
                         <img id="card-edit-image-preview" src="" alt="Preview" style="max-width: 100%; max-height: 120px; border-radius: 4px; object-fit: cover; display: block; margin-bottom: 6px;">
                         <button class="btn" type="button" style="color: #de350b; font-size: 0.78rem;" onclick="Board.removeCardImage()">Remove Image</button>
@@ -568,7 +569,7 @@
             <div class="modal-footer">
                 <button class="btn" style="color: #de350b; margin-right: auto;" onclick="Board.deleteCurrentCard()">Delete Card</button>
                 <button class="btn" onclick="UI.closeModal('card-modal')">Cancel</button>
-                <button class="btn btn-primary" onclick="Board.saveCardModal()">Save Changes</button>
+                <button class="btn btn-primary" id="card-save-button" onclick="Board.saveCardModal()">Save Changes</button>
             </div>
         </div>
     </div>
@@ -923,6 +924,37 @@
                 });
             },
 
+            async commitCardState(state, asset) {
+                if (!this.db) await this.init();
+                const clean = sanitizeStateForExport(state);
+                clean.snapshots = sanitizeSnapshots(state.snapshots);
+                await new Promise((resolve, reject) => {
+                    const tx = this.db.transaction(['assets', 'app_state'], 'readwrite');
+                    tx.oncomplete = resolve;
+                    tx.onerror = tx.onabort = () => reject(tx.error || new Error('Local card save was interrupted.'));
+                    try {
+                        if (asset) tx.objectStore('assets').put({ id: asset.id, blob: asset.blob, updated: Date.now() });
+                        tx.objectStore('app_state').put({ id: 'main_state', data: clean });
+                        // Read inside the transaction. A verification failure aborts BOTH writes.
+                        const stateRead = tx.objectStore('app_state').get('main_state');
+                        stateRead.onsuccess = () => {
+                            if (JSON.stringify(stateRead.result?.data) !== JSON.stringify(clean)) tx.abort();
+                        };
+                        if (asset) {
+                            const assetRead = tx.objectStore('assets').get(asset.id);
+                            assetRead.onsuccess = () => {
+                                const blob = assetRead.result?.blob;
+                                if (!blob || !blob.size || blob.size !== asset.blob.size || blob.type !== asset.blob.type) tx.abort();
+                            };
+                        }
+                    } catch (error) { tx.abort(); reject(error); }
+                });
+                // IndexedDB is the authoritative reload source. A mirror failure must not undo a committed image.
+                try { localStorage.setItem('busy_bored_state', JSON.stringify(clean)); }
+                catch (_) { return 'Saved in this browser’s database; the secondary backup could not be updated.'; }
+                return '';
+            },
+
             async getAsset(id) {
                 if (!this.db) await this.init();
                 return new Promise((resolve, reject) => {
@@ -998,7 +1030,7 @@
             cards: {
                 'card-1': {
                     id: 'card-1',
-                    title: 'Welcome to Busy Bored Happy Secure',
+                    title: 'Welcome to Busy Bored',
                     coverUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&q=80',
                     coverAssetId: null,
                     description: 'Restored Pomodoro timer, AI copilot, Apple integrations, priority badges, and multi-floating windows.',
@@ -1049,6 +1081,24 @@
         let pendingCardImageBlob = null;
         let pendingCardImagePreviewUrl = null;
         let isCardImageRemoved = false;
+        let cardImageGeneration = 0;
+        let pendingCardImageTask = null;
+        let cardImageSelectionError = null;
+        let cardSaveInProgress = false;
+
+        async function verifyDisplayableCardImage(blob) {
+            if (!blob || !blob.size) throw new Error('The saved image is empty or missing.');
+            const url = URL.createObjectURL(blob);
+            try {
+                await new Promise((resolve, reject) => {
+                    const image = new Image();
+                    image.onload = () => image.naturalWidth > 0 ? resolve() : reject(new Error('Image has no visible pixels.'));
+                    image.onerror = () => reject(new Error('This browser could not display the saved image. Try a JPEG or PNG.'));
+                    image.src = url;
+                });
+            } finally { URL.revokeObjectURL(url); }
+        }
+
 
         const Storage = {
             async save() {
@@ -1072,6 +1122,7 @@
                     delete AppState.copilotKey;
                     delete AppState.gistToken;
 
+                    tidyBuiltInWelcomeCard(AppState.cards);
                     AppState.snapshots = sanitizeSnapshots(loaded.snapshots);
 
                     AppState.background = {
@@ -1143,7 +1194,7 @@
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
                 const dl = document.createElement('a');
                 dl.setAttribute("href", dataStr);
-                dl.setAttribute("download", `busy_bored_happy_secure_backup_${getTodayLocalDateString()}.json`);
+                dl.setAttribute("download", `busy_bored_backup_${getTodayLocalDateString()}.json`);
                 document.body.appendChild(dl); dl.click(); dl.remove();
             },
 
@@ -1496,7 +1547,21 @@
                 this.openNewCardModal(AppState.lists[0].id);
             },
 
+            setCardImageStatus(message, isError = false) {
+                const status = document.getElementById('card-image-status');
+                if (status) {
+                    status.textContent = message;
+                    status.className = message ? (isError ? 'alert alert-error' : 'text-subtle') : '';
+                }
+            },
+
             clearCardImageState() {
+                cardImageGeneration++;
+                pendingCardImageTask = null;
+                cardImageSelectionError = null;
+                this.setCardImageStatus('');
+                const saveButton = document.getElementById('card-save-button');
+                if (saveButton && !cardSaveInProgress) saveButton.disabled = false;
                 if (pendingCardImagePreviewUrl) {
                     URL.revokeObjectURL(pendingCardImagePreviewUrl);
                     pendingCardImagePreviewUrl = null;
@@ -1527,6 +1592,7 @@
                 tempChecklist = [];
                 this.renderChecklistEditor();
                 UI.openModal('card-modal');
+                document.getElementById('card-edit-title').focus();
             },
 
             openEditCardModal(cardId) {
@@ -1548,8 +1614,9 @@
                 const previewImg = document.getElementById('card-edit-image-preview');
 
                 if (card.coverAssetId) {
+                    const previewGeneration = cardImageGeneration;
                     MediaStorage.getAsset(card.coverAssetId).then(blob => {
-                        if (blob && blob.size > 0 && !pendingCardImageBlob && !isCardImageRemoved) {
+                        if (previewGeneration === cardImageGeneration && blob && blob.size > 0 && !pendingCardImageBlob && !isCardImageRemoved) {
                             pendingCardImagePreviewUrl = URL.createObjectURL(blob);
                             previewImg.src = pendingCardImagePreviewUrl;
                             container.style.display = 'block';
@@ -1566,40 +1633,58 @@
             async handleCardImageSelection(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-
-                const supportedMimes = ['image/jpeg', 'image/png', 'image/webp'];
-                const ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
-                const supportedExts = ['jpg', 'jpeg', 'png', 'webp'];
-
-                if ((file.type && !supportedMimes.includes(file.type.toLowerCase())) && (!ext || !supportedExts.includes(ext))) {
-                    alert('Please select a valid JPEG, PNG, or WebP image.');
-                    e.target.value = '';
-                    return;
-                }
-
-                try {
-                    const processed = await Settings.processAndResizeImage(file);
-                    
-                    if (pendingCardImagePreviewUrl) {
-                        URL.revokeObjectURL(pendingCardImagePreviewUrl);
+                const generation = ++cardImageGeneration;
+                pendingCardImageBlob = null;
+                cardImageSelectionError = null;
+                isCardImageRemoved = false;
+                const saveButton = document.getElementById('card-save-button');
+                if (saveButton) saveButton.disabled = true;
+                this.setCardImageStatus('Preparing image…');
+                const task = Promise.resolve().then(async () => {
+                    try {
+                        const ext = file.name ? file.name.split('.').pop().toLowerCase() : '';
+                        const mime = (file.type || '').toLowerCase();
+                        if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime) &&
+                            !['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+                            throw new Error('Please select a JPEG, PNG, or WebP image.');
+                        }
+                        if (file.size > 50 * 1024 * 1024) throw new Error('Choose an image smaller than 50 MB.');
+                        const mimeByExt = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+                        const input = ['image/jpeg', 'image/png', 'image/webp'].includes(mime)
+                            ? file : new Blob([file], { type: mimeByExt[ext] });
+                        const processed = await Settings.processAndResizeImage(input);
+                        await verifyDisplayableCardImage(processed.blob);
+                        if (generation !== cardImageGeneration) return;
+                        if (pendingCardImagePreviewUrl) URL.revokeObjectURL(pendingCardImagePreviewUrl);
+                        pendingCardImageBlob = processed.blob;
+                        pendingCardImagePreviewUrl = URL.createObjectURL(processed.blob);
+                        const preview = document.getElementById('card-edit-image-preview');
+                        preview.src = pendingCardImagePreviewUrl;
+                        document.getElementById('card-edit-image-preview-container').style.display = 'block';
+                        this.setCardImageStatus('Image ready. Save Changes to keep it.');
+                    } catch (error) {
+                        if (generation !== cardImageGeneration) return;
+                        cardImageSelectionError = error.message || 'Could not process this image.';
+                        this.setCardImageStatus(cardImageSelectionError + ' Choose another image or remove it before saving.', true);
+                        e.target.value = '';
+                    } finally {
+                        if (generation === cardImageGeneration) {
+                            pendingCardImageTask = null;
+                            if (saveButton && !cardSaveInProgress) saveButton.disabled = false;
+                        }
                     }
-
-                    pendingCardImageBlob = processed.blob;
-                    pendingCardImagePreviewUrl = URL.createObjectURL(processed.blob);
-                    isCardImageRemoved = false;
-
-                    const previewImg = document.getElementById('card-edit-image-preview');
-                    const container = document.getElementById('card-edit-image-preview-container');
-                    previewImg.src = pendingCardImagePreviewUrl;
-                    container.style.display = 'block';
-                } catch (err) {
-                    console.error('Failed to process card image', err);
-                    alert('Could not process selected image.');
-                    e.target.value = '';
-                }
+                });
+                pendingCardImageTask = task;
+                await task;
             },
 
             removeCardImage() {
+                cardImageGeneration++;
+                pendingCardImageTask = null;
+                cardImageSelectionError = null;
+                this.setCardImageStatus('');
+                const saveButton = document.getElementById('card-save-button');
+                if (saveButton && !cardSaveInProgress) saveButton.disabled = false;
                 if (pendingCardImagePreviewUrl) {
                     URL.revokeObjectURL(pendingCardImagePreviewUrl);
                     pendingCardImagePreviewUrl = null;
@@ -1655,77 +1740,70 @@
             deleteCheckitem(idx) { tempChecklist.splice(idx, 1); this.renderChecklistEditor(); },
 
             async saveCardModal() {
-                const cardId = document.getElementById('card-edit-id').value;
-                const listId = document.getElementById('card-edit-list-id').value;
-                const title = document.getElementById('card-edit-title').value.trim();
-                if (!title) { alert('Card title is required.'); return; }
-
-                const tagsStr = document.getElementById('card-edit-tags').value;
-                const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
-
-                let targetCard = null;
-                let oldCoverAssetId = null;
-
-                if (cardId) {
-                    targetCard = AppState.cards[cardId];
-                    if (targetCard) {
-                        oldCoverAssetId = targetCard.coverAssetId || null;
-                        targetCard.title = title;
-                        targetCard.description = document.getElementById('card-edit-desc').value;
-                        targetCard.priority = document.getElementById('card-edit-priority').value;
-                        targetCard.dueDate = document.getElementById('card-edit-due').value;
-                        targetCard.tags = tags;
-                        targetCard.sticky = document.getElementById('card-edit-sticky').checked;
-                        targetCard.checklist = tempChecklist;
-                    }
-                } else {
-                    const newId = 'card-' + Date.now();
-                    targetCard = {
-                        id: newId,
-                        title,
-                        coverUrl: '',
-                        coverAssetId: null,
-                        description: document.getElementById('card-edit-desc').value,
+                if (cardSaveInProgress) return;
+                cardSaveInProgress = true;
+                const generation = cardImageGeneration;
+                let committed = false;
+                const saveButton = document.getElementById('card-save-button');
+                if (saveButton) saveButton.disabled = true;
+                try {
+                    if (pendingCardImageTask) await pendingCardImageTask;
+                    if (generation !== cardImageGeneration) return;
+                    if (cardImageSelectionError) throw new Error(cardImageSelectionError);
+                    const title = document.getElementById('card-edit-title').value.trim();
+                    if (!title) throw new Error('Card title is required.');
+                    const cardId = document.getElementById('card-edit-id').value;
+                    const listId = document.getElementById('card-edit-list-id').value;
+                    const next = JSON.parse(JSON.stringify(AppState));
+                    const id = cardId || 'card-' + Date.now();
+                    if (cardId && !next.cards[id]) throw new Error('This card no longer exists. Reopen the card.');
+                    const card = next.cards[id] || { id, coverUrl: '', coverAssetId: null };
+                    Object.assign(card, {
+                        title, description: document.getElementById('card-edit-desc').value,
                         priority: document.getElementById('card-edit-priority').value,
                         dueDate: document.getElementById('card-edit-due').value,
-                        tags,
+                        tags: document.getElementById('card-edit-tags').value.split(',').map(t => t.trim()).filter(Boolean),
                         sticky: document.getElementById('card-edit-sticky').checked,
-                        checklist: tempChecklist
-                    };
-                    AppState.cards[newId] = targetCard;
-                    const targetList = AppState.lists.find(l => l.id === listId);
-                    if (targetList) targetList.cardIds.push(newId);
-                }
-
-                if (targetCard) {
+                        checklist: JSON.parse(JSON.stringify(tempChecklist))
+                    });
+                    let asset = null;
                     if (pendingCardImageBlob) {
-                        const newAssetId = `card-img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-                        try {
-                            await MediaStorage.saveAsset(newAssetId, pendingCardImageBlob);
-                            const verifiedBlob = await MediaStorage.getAsset(newAssetId);
-                            if (verifiedBlob && verifiedBlob.size > 0) {
-                                targetCard.coverAssetId = newAssetId;
-                                targetCard.coverUrl = '';
-                                if (oldCoverAssetId && oldCoverAssetId !== newAssetId) {
-                                    await MediaStorage.deleteAsset(oldCoverAssetId);
-                                }
-                            }
-                        } catch (err) {
-                            console.error('Failed saving card image asset', err);
-                        }
+                        await verifyDisplayableCardImage(pendingCardImageBlob);
+                        if (generation !== cardImageGeneration) return;
+                        const assetId = `card-img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+                        asset = { id: assetId, blob: pendingCardImageBlob };
+                        card.coverAssetId = assetId;
+                        card.coverUrl = '';
+                        delete card.coverStorage;
                     } else if (isCardImageRemoved) {
-                        targetCard.coverAssetId = null;
-                        targetCard.coverUrl = '';
-                        if (oldCoverAssetId) {
-                            await MediaStorage.deleteAsset(oldCoverAssetId);
-                        }
+                        card.coverAssetId = null;
+                        card.coverUrl = '';
+                        delete card.coverStorage;
                     }
+                    next.cards[id] = card;
+                    if (!cardId) {
+                        const list = next.lists.find(l => l.id === listId);
+                        if (!list) throw new Error('Choose an existing list before saving.');
+                        list.cardIds.push(id);
+                    }
+                    this.setCardImageStatus('Saving and verifying…');
+                    const warning = await MediaStorage.commitCardState(next, asset);
+                    committed = true;
+                    AppState = next;
+                    this.clearCardImageState();
+                    UI.closeModal('card-modal');
+                    this.render();
+                    if (warning) alert(warning);
+                } catch (error) {
+                    if (committed) {
+                        alert('Card saved in this browser, but its display could not be refreshed. Reload this tab to view it.');
+                    } else {
+                        this.setCardImageStatus(`Card not saved: ${error.message || 'Local storage failed'}. Your previous card and image are kept.`, true);
+                    }
+                } finally {
+                    cardSaveInProgress = false;
+                    if (saveButton) saveButton.disabled = !!pendingCardImageTask;
                 }
-
-                this.clearCardImageState();
-                await Storage.save();
-                UI.closeModal('card-modal');
-                this.render();
             },
 
             deleteCurrentCard() {
@@ -2055,7 +2133,7 @@
                 const exportData = sanitizeStateForExport(AppState);
 
                 const payload = {
-                    description: "Busy Bored Happy Secure Unlisted Manual Backup",
+                    description: "Busy Bored Unlisted Manual Backup",
                     public: false,
                     files: { "busy_bored_data.json": { content: JSON.stringify(exportData, null, 2) } }
                 };
@@ -2136,7 +2214,97 @@
             };
         }
 
+        // Blobs live in private Storage; only immutable references enter the workspace row.
+        const COVER_BUCKET = 'busy-bored-covers';
+        const COVER_MAX_BYTES = 10 * 1024 * 1024;
+        const COVER_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+
+        function tidyBuiltInWelcomeCard(cards) {
+            // Only migrate the exact shipped starter card, preserving user-authored titles.
+            if (cards?.['card-1']?.title === ['Welcome to Busy Bored', 'Happy', 'Secure'].join(' ')) {
+                cards['card-1'].title = 'Welcome to Busy Bored';
+            }
+        }
+
+        function validateCoverBlob(blob) {
+            if (!blob || !COVER_TYPES[blob.type] || !blob.size || blob.size > COVER_MAX_BYTES) {
+                throw new Error('Cover must be JPEG, PNG, WebP or GIF, between 1 byte and 10 MiB. Local image kept.');
+            }
+        }
+
+        async function coverHash(blob) {
+            const hash = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+            return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function validateCoverRef(ref, userId) {
+            if (!ref || ref.bucket !== COVER_BUCKET || !/^[a-f0-9]{64}$/.test(ref.sha256) ||
+                !COVER_TYPES[ref.mime] || !Number.isInteger(ref.size) || ref.size < 1 || ref.size > COVER_MAX_BYTES ||
+                ref.path !== `${userId}/covers/${ref.sha256}.${COVER_TYPES[ref.mime]}`) {
+                throw new Error('Invalid cover reference or cover belongs to another account.');
+            }
+        }
+
+        async function verifyCloudCover(blob, ref) {
+            validateCoverBlob(blob);
+            if (blob.type !== ref.mime || blob.size !== ref.size || await coverHash(blob) !== ref.sha256) {
+                throw new Error('Downloaded cover did not match its saved reference.');
+            }
+        }
+
+        async function downloadCloudCover(ref, userId) {
+            validateCoverRef(ref, userId);
+            const { data, error } = await supabaseClient.storage.from(COVER_BUCKET).download(ref.path);
+            if (error) throw new Error(`Cover download failed: ${error.message}`);
+            await verifyCloudCover(data, ref);
+            return data;
+        }
+
+        async function uploadCloudCovers(state, localCards, userId) {
+            for (const [id, card] of Object.entries(state.cards)) {
+                const assetId = localCards[id]?.coverAssetId;
+                if (assetId) {
+                    const blob = await MediaStorage.getAsset(assetId);
+                    validateCoverBlob(blob); // Missing assets abort the push; never silently publish a missing cover.
+                    const sha256 = await coverHash(blob);
+                    const ref = { bucket: COVER_BUCKET, path: `${userId}/covers/${sha256}.${COVER_TYPES[blob.type]}`,
+                        sha256, mime: blob.type, size: blob.size };
+                    const { error } = await supabaseClient.storage.from(COVER_BUCKET).upload(ref.path, blob,
+                        { contentType: blob.type, upsert: false });
+                    // Includes retry after a previous DB failure or a duplicate immutable object.
+                    // A failed upload is acceptable only when an identical readable object already exists.
+                    try { await downloadCloudCover(ref, userId); }
+                    catch (failure) { throw new Error(error ? `Cover upload failed: ${error.message}; ${failure.message}` : failure.message); }
+                    card.coverStorage = ref;
+                } else if (card.coverStorage) {
+                    await downloadCloudCover(card.coverStorage, userId);
+                } else {
+                    card.coverStorage = null; // Explicit absence for new clients; legacy rows have no field.
+                }
+            }
+        }
+
+        async function downloadCloudCovers(cards, localCards, userId) {
+            const result = attachLocalCardImages(cards, localCards);
+            for (const [id, card] of Object.entries(result)) {
+                if (card.coverStorage === null) { delete card.coverAssetId; continue; }
+                if (!card.coverStorage) continue; // Legacy cloud rows retain the existing local-only fallback.
+                const blob = await downloadCloudCover(card.coverStorage, userId);
+                const assetId = `cloud-cover-${userId}-${card.coverStorage.sha256}`;
+                await MediaStorage.saveAsset(assetId, blob);
+                await verifyCloudCover(await MediaStorage.getAsset(assetId), card.coverStorage);
+                card.coverAssetId = assetId;
+            }
+            return result;
+        }
+
+        async function requireCloudUser(userId) {
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error || data?.session?.user?.id !== userId) throw new Error('Sign-in changed during sync. Try again.');
+        }
+
         const CloudSync = {
+            busy: false,
             async init() {
                 if (typeof window.supabase !== 'undefined' && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
                     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
@@ -2270,100 +2438,104 @@
             },
 
             async signOut() {
+                if (this.busy) return;
                 if (supabaseClient) await supabaseClient.auth.signOut();
                 this.updateUI();
             },
 
             async pushLocal() {
-                const statusSpan = document.getElementById('cloud-sync-status');
-                if (!this.isConfigured()) {
-                    if (statusSpan) statusSpan.textContent = 'Cloud sync not configured.';
-                    return;
-                }
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session) {
-                    if (statusSpan) statusSpan.textContent = 'Signed out';
-                    return;
-                }
-
-                statusSpan.textContent = 'Uploading...';
-                const cloudState = createCloudSyncState();
-                const nowIso = new Date().toISOString();
-
-                const { error } = await supabaseClient
-                    .from('busy_bored_workspaces')
-                    .upsert({
-                        user_id: session.user.id,
-                        state: cloudState,
-                        updated_at: nowIso
-                    }, { onConflict: 'user_id' });
-
-                if (error) {
-                    statusSpan.textContent = `Cloud sync error: ${error.message}`;
-                    console.error('Cloud Push Error:', error);
-                } else {
-                    const timeStr = new Date(nowIso).toLocaleTimeString();
-                    statusSpan.textContent = `Cloud backup updated (${timeStr})`;
-                }
+                return this.runManualSync('push');
             },
 
             async pullCloud() {
-                const statusSpan = document.getElementById('cloud-sync-status');
-                if (!this.isConfigured()) {
-                    if (statusSpan) statusSpan.textContent = 'Cloud sync not configured.';
-                    return;
+                return this.runManualSync('pull');
+            },
+
+            async runManualSync(direction) {
+                const status = document.getElementById('cloud-sync-status');
+                if (this.busy) return;
+                if (!this.isConfigured()) { status.textContent = 'Cloud sync not configured.'; return; }
+                this.busy = true;
+                const buttons = Array.from(document.querySelectorAll('#cloud-sync-ui-container button'));
+                buttons.forEach(button => button.disabled = true);
+                let previousState = null;
+                let persistenceStarted = false;
+                try {
+                    const { data: auth, error: authError } = await supabaseClient.auth.getSession();
+                    if (authError) throw authError;
+                    const userId = auth?.session?.user?.id;
+                    if (!userId) throw new Error('Sign in first.');
+                    const unchanged = JSON.stringify(sanitizeStateForExport(AppState));
+                    const localCards = JSON.parse(JSON.stringify(AppState.cards || {}));
+                    if (direction === 'push') {
+                        status.textContent = 'Uploading and verifying cover images…';
+                        const state = createCloudSyncState();
+                        await uploadCloudCovers(state, localCards, userId);
+                        await requireCloudUser(userId);
+                        if (unchanged !== JSON.stringify(sanitizeStateForExport(AppState))) {
+                            throw new Error('Board changed during upload. Push again to include the changes.');
+                        }
+                        status.textContent = 'Saving workspace data…';
+                        const { error } = await supabaseClient.from('busy_bored_workspaces').upsert({
+                            user_id: userId, state, updated_at: new Date().toISOString()
+                        }, { onConflict: 'user_id' });
+                        if (error) throw error;
+                        status.textContent = 'Workspace data and cover images pushed to cloud.';
+                    } else {
+                        status.textContent = 'Downloading workspace data…';
+                        const { data, error } = await supabaseClient.from('busy_bored_workspaces')
+                            .select('state, updated_at').eq('user_id', userId).maybeSingle();
+                        if (error) throw error;
+                        if (!data?.state) { status.textContent = 'No cloud workspace exists yet. Push this device first.'; return; }
+                        const remote = data.state;
+                        if (!Array.isArray(remote.lists) || !remote.cards || typeof remote.cards !== 'object' ||
+                            Array.isArray(remote.cards) || Object.values(remote.cards).some(c => !c || typeof c !== 'object')) {
+                            throw new Error('Invalid remote workspace.');
+                        }
+                        status.textContent = 'Downloading and verifying cover images…';
+                        const cards = await downloadCloudCovers(remote.cards, localCards, userId);
+                        tidyBuiltInWelcomeCard(cards);
+                        await requireCloudUser(userId);
+                        if (unchanged !== JSON.stringify(sanitizeStateForExport(AppState))) {
+                            throw new Error('Board changed during download. Pull again when editing is finished.');
+                        }
+                        previousState = JSON.parse(JSON.stringify(AppState));
+                        const snapshot = { id: 'snap-' + Date.now(), timestamp: new Date().toLocaleTimeString(),
+                            label: 'Before Cloud Pull', state: sanitizeStateForExport(previousState) };
+                        const nextState = { ...DefaultData, theme: remote.theme || 'modern', lists: remote.lists, cards,
+                            snapshots: sanitizeSnapshots([snapshot, ...(previousState.snapshots || [])].slice(0, 5)),
+                            background: previousState.background, gistId: previousState.gistId };
+                        // Commit only after every blob has been read back. Keep old blobs for rollback/snapshots.
+                        persistenceStarted = true;
+                        await MediaStorage.saveAppState(nextState);
+                        const saved = await MediaStorage.loadAppState();
+                        if (JSON.stringify(saved) !== JSON.stringify({ ...sanitizeStateForExport(nextState), snapshots: nextState.snapshots })) {
+                            throw new Error('Could not verify saved workspace.');
+                        }
+                        localStorage.setItem('busy_bored_state', JSON.stringify(saved));
+                        AppState = nextState;
+                        Settings.init();
+                        Board.render();
+                        Storage.renderSnapshotsList();
+                        status.textContent = 'Workspace data and cover images loaded.';
+                    }
+                } catch (error) {
+                    let recovery = '';
+                    if (persistenceStarted && previousState) {
+                        AppState = previousState;
+                        try {
+                            await MediaStorage.saveAppState(previousState);
+                            localStorage.setItem('busy_bored_state', JSON.stringify({ ...sanitizeStateForExport(previousState),
+                                snapshots: sanitizeSnapshots(previousState.snapshots) }));
+                            const recovered = await MediaStorage.loadAppState();
+                            if (JSON.stringify(recovered) !== localStorage.getItem('busy_bored_state')) throw new Error('Readback mismatch');
+                        } catch (_) { recovery = ' Local save recovery could not be verified; keep this tab open and export JSON.'; }
+                    }
+                    status.textContent = `Cloud ${direction} failed: ${error.message || 'Unknown error'}. Local board and images kept.${recovery}`;
+                } finally {
+                    this.busy = false;
+                    buttons.forEach(button => button.disabled = false);
                 }
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session) {
-                    if (statusSpan) statusSpan.textContent = 'Signed out';
-                    return;
-                }
-
-                statusSpan.textContent = 'Downloading...';
-
-                const { data, error } = await supabaseClient
-                    .from('busy_bored_workspaces')
-                    .select('state, updated_at')
-                    .eq('user_id', session.user.id)
-                    .maybeSingle();
-
-                if (error) {
-                    statusSpan.textContent = `Cloud sync error: ${error.message}`;
-                    console.error('Cloud Pull Error:', error);
-                    return;
-                }
-
-                if (!data || !data.state) {
-                    statusSpan.textContent = 'No cloud workspace exists yet. Push this device first.';
-                    return;
-                }
-
-                const remoteState = data.state;
-                if (!remoteState.lists || !remoteState.cards) {
-                    statusSpan.textContent = 'Cloud sync error: Invalid remote state.';
-                    return;
-                }
-
-                Storage.createSnapshot('Before Cloud Pull');
-
-                const localCards = AppState.cards || {};
-                const localSnapshots = AppState.snapshots || [];
-                const localBackground = AppState.background;
-                const localGistId = AppState.gistId;
-
-                AppState = { ...DefaultData, ...remoteState };
-                delete AppState.copilotKey;
-                delete AppState.gistToken;
-
-                AppState.cards = attachLocalCardImages(remoteState.cards, localCards);
-                AppState.snapshots = sanitizeSnapshots(localSnapshots);
-                AppState.background = localBackground;
-                AppState.gistId = localGistId;
-
-                await Storage.save();
-
-                statusSpan.textContent = 'Cloud workspace loaded.';
-                setTimeout(() => location.reload(), 500);
             }
         };
 
