@@ -865,71 +865,94 @@
         const MediaStorage = {
             dbName: 'BusyBoredDB', dbVersion: 3, db: null,
 
+            openPromise: null,
+
             async init() {
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(this.dbName, this.dbVersion);
-                    request.onupgradeneeded = (e) => {
-                        const db = e.target.result;
-                        if (!db.objectStoreNames.contains('assets')) {
-                            db.createObjectStore('assets', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('attachments')) {
-                            db.createObjectStore('attachments', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('app_state')) {
-                            db.createObjectStore('app_state', { keyPath: 'id' });
-                        }
+                if (this.db) return this.db;
+                if (this.openPromise) return this.openPromise;
+                const requiredStores = ['assets', 'attachments', 'app_state'];
+                const open = version => new Promise((resolve, reject) => {
+                    let abandoned = false;
+                    // Omit version on reconnect: an earlier build may have upgraded beyond version 3.
+                    const request = version === undefined ? indexedDB.open(this.dbName) : indexedDB.open(this.dbName, version);
+                    request.onupgradeneeded = event => {
+                        const db = event.target.result;
+                        if (abandoned) { event.target.transaction.abort(); return; }
+                        requiredStores.forEach(name => {
+                            if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'id' });
+                        });
                     };
-                    request.onsuccess = (e) => {
-                        this.db = e.target.result;
-                        if (!this.db.objectStoreNames.contains('assets') || !this.db.objectStoreNames.contains('app_state')) {
-                            this.db.close();
-                            const req2 = indexedDB.open(this.dbName, this.dbVersion + 1);
-                            req2.onupgradeneeded = (ev) => {
-                                const db2 = ev.target.result;
-                                if (!db2.objectStoreNames.contains('assets')) db2.createObjectStore('assets', { keyPath: 'id' });
-                                if (!db2.objectStoreNames.contains('attachments')) db2.createObjectStore('attachments', { keyPath: 'id' });
-                                if (!db2.objectStoreNames.contains('app_state')) db2.createObjectStore('app_state', { keyPath: 'id' });
-                            };
-                            req2.onsuccess = (ev) => {
-                                this.db = ev.target.result;
-                                document.getElementById('storage-status').textContent = 'IndexedDB Ready';
-                                resolve(this.db);
-                            };
-                            req2.onerror = (ev) => reject(ev.target.error);
-                            return;
-                        }
-                        document.getElementById('storage-status').textContent = 'IndexedDB Ready';
-                        resolve(this.db);
+                    request.onblocked = () => {
+                        abandoned = true;
+                        reject(new Error('Another Busy Bored tab is blocking the local database update. Close the other Busy Bored tabs, then try Save again. Do not clear browser storage.'));
                     };
-                    request.onerror = (e) => {
-                        console.error('IndexedDB init failed:', e.target.error);
-                        document.getElementById('storage-status').textContent = 'Storage Fallback';
-                        reject(e.target.error);
+                    request.onerror = () => reject(request.error || new Error('Could not open the local database.'));
+                    request.onsuccess = event => {
+                        const db = event.target.result;
+                        if (abandoned) { db.close(); return; }
+                        resolve(db);
                     };
                 });
+                const pending = (async () => {
+                    let db = await open();
+                    if (requiredStores.some(name => !db.objectStoreNames.contains(name))) {
+                        const nextVersion = db.version + 1;
+                        db.close();
+                        db = await open(nextVersion);
+                    }
+                    if (requiredStores.some(name => !db.objectStoreNames.contains(name))) {
+                        db.close();
+                        throw new Error('The local database is missing a required store.');
+                    }
+                    this.db = db;
+                    this.dbVersion = db.version;
+                    db.onversionchange = () => {
+                        // Release a connection when another tab needs an upgrade; reopen on the next operation.
+                        db.close();
+                        if (this.db === db) this.db = null;
+                    };
+                    db.onclose = () => { if (this.db === db) this.db = null; };
+                    const status = document.getElementById('storage-status');
+                    if (status) status.textContent = 'IndexedDB Ready';
+                    return db;
+                })();
+                this.openPromise = pending;
+                try { return await pending; }
+                finally { if (this.openPromise === pending) this.openPromise = null; }
+            },
+
+            async useTransaction(stores, mode, start) {
+                let db = await this.init();
+                let tx;
+                try { tx = db.transaction(stores, mode); }
+                catch (error) {
+                    // Retry ONLY transaction creation, before any requests/writes have been issued.
+                    if (error.name !== 'InvalidStateError') throw error;
+                    if (this.db === db) this.db = null;
+                    db.close();
+                    db = await this.init();
+                    tx = db.transaction(stores, mode);
+                }
+                // Issue requests immediately in the same turn as transaction creation.
+                return start(tx);
             },
 
             async saveAsset(id, blob) {
-                if (!this.db) await this.init();
-                return new Promise((resolve, reject) => {
+                return this.useTransaction('assets', 'readwrite', tx => new Promise((resolve, reject) => {
                     try {
-                        const tx = this.db.transaction('assets', 'readwrite');
                         tx.objectStore('assets').put({ id, blob, updated: Date.now() });
                         tx.oncomplete = () => resolve(id);
-                        tx.onerror = () => reject({ code: 'INDEXEDDB_ERROR', message: tx.error?.message || 'Transaction error saving asset' });
+                        tx.onerror = tx.onabort = () => reject({ code: 'INDEXEDDB_ERROR', message: tx.error?.message || 'Transaction error saving asset' });
                     } catch (err) {
                         reject({ code: 'INDEXEDDB_ERROR', message: err.message });
                     }
-                });
+                }));
             },
 
             async commitCardState(state, asset) {
-                if (!this.db) await this.init();
                 const clean = sanitizeStateForExport(state);
                 clean.snapshots = sanitizeSnapshots(state.snapshots);
-                await new Promise((resolve, reject) => {
-                    const tx = this.db.transaction(['assets', 'app_state'], 'readwrite');
+                await this.useTransaction(['assets', 'app_state'], 'readwrite', tx => new Promise((resolve, reject) => {
                     tx.oncomplete = resolve;
                     tx.onerror = tx.onabort = () => reject(tx.error || new Error('Local card save was interrupted.'));
                     try {
@@ -948,7 +971,7 @@
                             };
                         }
                     } catch (error) { tx.abort(); reject(error); }
-                });
+                }));
                 // IndexedDB is the authoritative reload source. A mirror failure must not undo a committed image.
                 try { localStorage.setItem('busy_bored_state', JSON.stringify(clean)); }
                 catch (_) { return 'Saved in this browser’s database; the secondary backup could not be updated.'; }
@@ -956,61 +979,54 @@
             },
 
             async getAsset(id) {
-                if (!this.db) await this.init();
-                return new Promise((resolve, reject) => {
+                return this.useTransaction('assets', 'readonly', tx => new Promise((resolve, reject) => {
                     try {
-                        const tx = this.db.transaction('assets', 'readonly');
                         const req = tx.objectStore('assets').get(id);
                         req.onsuccess = () => resolve(req.result ? req.result.blob : null);
                         req.onerror = () => reject(req.error);
                     } catch (err) {
-                        resolve(null);
+                        reject(err);
                     }
-                });
+                }));
             },
 
             async deleteAsset(id) {
-                if (!id || !this.db) return;
-                return new Promise((resolve, reject) => {
+                if (!id) return;
+                return this.useTransaction('assets', 'readwrite', tx => new Promise((resolve, reject) => {
                     try {
-                        const tx = this.db.transaction('assets', 'readwrite');
                         tx.objectStore('assets').delete(id);
                         tx.oncomplete = () => resolve();
-                        tx.onerror = () => reject(tx.error);
+                        tx.onerror = tx.onabort = () => reject(tx.error);
                     } catch (err) {
-                        resolve();
+                        reject(err);
                     }
-                });
+                }));
             },
 
             async saveAppState(stateObj) {
-                if (!this.db) await this.init();
-                return new Promise((resolve, reject) => {
+                return this.useTransaction('app_state', 'readwrite', tx => new Promise((resolve, reject) => {
                     try {
                         const cleanState = sanitizeStateForExport(stateObj);
                         cleanState.snapshots = sanitizeSnapshots(stateObj.snapshots);
-                        const tx = this.db.transaction('app_state', 'readwrite');
                         tx.objectStore('app_state').put({ id: 'main_state', data: cleanState });
                         tx.oncomplete = () => resolve();
-                        tx.onerror = () => reject(tx.error);
+                        tx.onerror = tx.onabort = () => reject(tx.error);
                     } catch (err) {
-                        resolve();
+                        reject(err);
                     }
-                });
+                }));
             },
 
             async loadAppState() {
-                if (!this.db) await this.init();
-                return new Promise((resolve, reject) => {
+                return this.useTransaction('app_state', 'readonly', tx => new Promise((resolve, reject) => {
                     try {
-                        const tx = this.db.transaction('app_state', 'readonly');
                         const req = tx.objectStore('app_state').get('main_state');
                         req.onsuccess = () => resolve(req.result ? req.result.data : null);
                         req.onerror = () => reject(req.error);
                     } catch (err) {
-                        resolve(null);
+                        reject(err);
                     }
-                });
+                }));
             }
         };
 
@@ -2215,7 +2231,7 @@
         }
 
         // Blobs live in private Storage; only immutable references enter the workspace row.
-        const COVER_BUCKET = 'busy-bored-covers';
+        const COVER_BUCKET = 'busy-bored-images';
         const COVER_MAX_BYTES = 10 * 1024 * 1024;
         const COVER_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
 
